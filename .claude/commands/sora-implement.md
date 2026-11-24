@@ -49,14 +49,18 @@ Tham số đầu tiên (`$1`) là **Mã PBI** (bắt buộc).
    - Sau mỗi task hoàn thành, **đánh dấu `[X]`** ngay trong tasks.md.
 
 6. **Xử lý lỗi khi thi công**:
-   - Nếu một task tuần tự thất bại → dừng lại, báo lỗi cụ thể kèm ngữ cảnh để debug, không tự ý bỏ qua sang task sau.
-   - Nếu một task `[P]` thất bại trong khi các task song song khác thành công → tiếp tục với các task thành công, báo cáo rõ task nào thất bại và lý do.
+   - Nếu một task (tuần tự hoặc `[P]`) thất bại → **retry tối đa 3 lần**: mỗi lần đọc lỗi cụ thể, điều chỉnh cách làm rồi thử lại, ghi lại lỗi + cách điều chỉnh của từng lần.
+   - Nếu sau 3 lần vẫn thất bại:
+     - Task tuần tự → dừng lại, báo lỗi cụ thể kèm log 3 lần retry, không tự ý bỏ qua sang task sau.
+     - Task `[P]` → tiếp tục với các task song song khác đã thành công, báo cáo rõ task nào thất bại, log 3 lần retry và lý do.
    - Đề xuất bước khắc phục tiếp theo nếu không thể tiếp tục.
 
-7. **Xác minh khi hoàn tất**:
+7. **Xác minh khi hoàn tất — bắt buộc có bằng chứng test**:
    - Xác nhận toàn bộ task bắt buộc đã được đánh dấu `[X]`.
    - Đối chiếu kết quả cài đặt với spec.md để đảm bảo đúng yêu cầu.
-   - Chạy test (nếu có) và xác nhận pass.
-   - Báo cáo tổng kết cuối cùng: số task hoàn thành/tổng số, các file đã tạo/sửa, kết quả test, các vấn đề còn tồn đọng (nếu có).
+   - Với mỗi task có bước kiểm thử: viết **file test case** (mô tả input/expected/actual, kết quả pass/fail) lưu tại `.specify/specs/$1/evidence/<tên-task>-testcase.md`.
+   - Chạy test, và khi có thể quan sát kết quả trực quan (UI, output chạy app, log) thì **chụp ảnh màn hình kết quả** lưu tại `.specify/specs/$1/evidence/<tên-task>-result.png` (dùng browser tool hoặc màn hình chạy app); với test chỉ có output dạng text (unit test CLI), lưu log output ra `.specify/specs/$1/evidence/<tên-task>-result.log` thay cho ảnh.
+   - Nếu một bước kiểm thử lỗi → áp dụng retry tối đa 3 lần như mục 6; nếu vẫn fail sau 3 lần, ghi rõ trong file test case là FAIL + log 3 lần thử, không tự đánh dấu task đó `[X]`.
+   - Báo cáo tổng kết cuối cùng: số task hoàn thành/tổng số, các file đã tạo/sửa, danh sách file bằng chứng test (test case + ảnh/log) theo từng task, các vấn đề còn tồn đọng (nếu có).
 
 Nếu `tasks.md` chưa đầy đủ hoặc không tìm thấy pha nào hợp lệ, dừng lại và đề xuất chạy `/sora-task $1` để tạo lại danh sách task.
