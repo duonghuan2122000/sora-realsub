@@ -30,7 +30,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 - [x] Implement `SpeechToText` bằng model local (whisper.cpp hoặc faster-whisper), test gửi file audio mẫu → nhận text đúng (PBI 12: `whisper-rs`, xác nhận bằng model + giọng nói thật)
 - [x] Ghép STT vào luồng: segment từ VAD → gửi STT → nhận text, test end-to-end với audio mẫu (PBI 13: `TranscriptPipeline`)
 - [x] Event Tauri `transcript-partial` (text tạm, có thể sửa) và `transcript-final` (text chốt), test UI nhận đúng thứ tự (PBI 14: `TranscriptPipeline` nối thật vào `start_capture`, xác nhận bằng test mock STT; `transcript-partial` chỉ test được bằng mock vì whisper.cpp hiện chưa hỗ trợ partial thật)
-- [ ] Xử lý lỗi runtime model (thiếu model file, lỗi load/infer, thông báo), test giả lập các case lỗi trên
+- [x] Xử lý lỗi runtime model (thiếu model file, lỗi load/infer, thông báo), test giả lập các case lỗi trên (PBI 15: event Tauri `model-error` loại `load`/`infer`, lỗi 1 segment không dừng pipeline)
 
 ## M4 — Dịch (Translation)
 

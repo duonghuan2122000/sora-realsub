@@ -37,4 +37,4 @@ Tính năng thứ ba của M3. Phát 2 loại event Tauri từ Core sang UI khi 
 - Chi tiết: `evidence/transcript-events-testcase.md`, log: `evidence/cargo-test-result.log`.
 
 ## Liên quan
-[[PBI-13-ghep-stt-vao-luong]], [[PBI-12-stt-local-whisper]], [[PBI-11-vad-segment-event]], [[Pipeline-xu-ly-audio]], [[Kien-truc-core-ui]], [[Trang-thai-ma-nguon]]
+[[PBI-15-xu-ly-loi-runtime-model-stt]], [[PBI-13-ghep-stt-vao-luong]], [[PBI-12-stt-local-whisper]], [[PBI-11-vad-segment-event]], [[Pipeline-xu-ly-audio]], [[Kien-truc-core-ui]], [[Trang-thai-ma-nguon]]

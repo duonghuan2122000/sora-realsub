@@ -19,3 +19,4 @@
 
 ## [2026-11-24] ingest | PBI 13: Ghép STT vào luồng VAD → Transcript (TranscriptPipeline, test tích hợp vad+stt end-to-end)
 ## [2026-11-24] ingest | PBI 14 — Event transcript-partial/transcript-final (spec/plan/tasks/evidence, code core/transcript_pipeline.rs thêm callback on_chunk + lib.rs nối TranscriptPipeline thật vào start_capture (nạp STT từ WHISPER_MODEL_PATH) + Cargo.toml chuyển tokio sang [dependencies], 47 unit + 8 integration = 55 test pass, không hỏng test cũ; WhisperSpeechToText hiện chỉ phát transcript-final (chưa hỗ trợ partial thật), tiếp tục M3 3/4); cập nhật PBI-14-transcript-partial-final-event, Core-Rust, Pipeline-xu-ly-audio, Trang-thai-ma-nguon, index
+## [2026-11-24] ingest | PBI 15: Xử lý lỗi runtime model STT (spec/plan/tasks/evidence, core/types.rs ModelErrorKind/ModelErrorEvent, process_segments thêm on_error, lib.rs emit event model-error load/infer, hoàn tất M3)
