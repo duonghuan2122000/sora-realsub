@@ -1,0 +1,22 @@
+   Compiling app v0.1.0 (C:\work\dbhuan\sora-realsub\app\src-tauri)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.14s
+     Running unittests src\lib.rs (target\debug\deps\app_lib-fcdcf91225f2ffd4.exe)
+
+running 8 tests
+test core::audio_source::tests::doi_cai_dat_khong_can_sua_code_goi ... ok
+test core::audio_source::tests::mock_noise_phat_ra_nhieu ... ok
+test core::audio_source::tests::mock_silent_phat_ra_im_lang ... ok
+test core::subtitle_sink::tests::nhan_dung_du_lieu_subtitle ... ok
+test core::translator::tests::goi_qua_trait_object ... ok
+test core::translator::tests::dich_kem_ngu_canh ... ok
+test core::speech_to_text::tests::tra_ve_partial_roi_final ... ok
+test core::speech_to_text::tests::goi_qua_trait_object_khong_biet_cai_dat_cu_the ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running unittests src\main.rs (target\debug\deps\app-b20fb8017778a37b.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
