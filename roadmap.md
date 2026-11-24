@@ -15,7 +15,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 
 - [x] Liệt kê thiết bị audio input (mic) qua Tauri command, trả về UI
 - [x] Capture mic thành PCM buffer (Rust), test bằng ghi ra file .wav
-- [ ] Capture loopback âm thanh hệ thống trên Windows (WASAPI loopback), test ghi ra .wav
+- [x] Capture loopback âm thanh hệ thống trên Windows (WASAPI loopback), test ghi ra .wav
 - [ ] Trộn (mix) mic + loopback thành 1 stream, test so khớp cả 2 nguồn nghe được trong file output
 - [ ] Command Tauri `start_capture` / `stop_capture`, test start/stop không leak thread/handle
 
