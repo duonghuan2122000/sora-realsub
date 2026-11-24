@@ -29,6 +29,8 @@ pub use speech_to_text::{SpeechToText, WhisperSpeechToText};
 pub use subtitle_sink::SubtitleSink;
 pub use transcript_pipeline::TranscriptPipeline;
 pub use translator::Translator;
-pub use types::{AudioFrame, StreamHandle, Subtitle, TranscriptChunk};
+pub use types::{
+    AudioFrame, ModelErrorEvent, ModelErrorKind, StreamHandle, Subtitle, TranscriptChunk,
+};
 pub use vad::{FrameLabel, detect, detect_with_threshold};
 pub use vad_pipeline::{SegmentReady, VadPipeline};

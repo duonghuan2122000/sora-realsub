@@ -138,4 +138,17 @@ mod tests {
         let result = stt.transcribe(dummy_frame()).await.unwrap();
         assert!(!result.is_final);
     }
+
+    // PBI 15 — T004: nạp model từ đường dẫn không tồn tại phải trả lỗi rõ ràng, không panic.
+    #[test]
+    fn nap_model_duong_dan_khong_ton_tai_tra_loi() {
+        let result = WhisperSpeechToText::new("duong-dan-khong-ton-tai.bin");
+        match result {
+            Err(CoreError::Provider(msg)) => {
+                assert!(!msg.is_empty());
+            }
+            Err(other) => panic!("kỳ vọng CoreError::Provider, nhận lỗi khác: {other}"),
+            Ok(_) => panic!("kỳ vọng Err khi nạp model từ đường dẫn không tồn tại"),
+        }
+    }
 }

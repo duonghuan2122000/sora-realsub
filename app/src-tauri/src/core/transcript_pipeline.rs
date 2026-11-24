@@ -21,10 +21,15 @@ impl<'a> TranscriptPipeline<'a> {
     /// `lib.rs`) phát event `transcript-partial`/`transcript-final` theo đúng thứ tự thời gian
     /// thực, không phải đợi toàn bộ `segments` xử lý xong (PBI 14, FR-001/FR-002/FR-003; xem
     /// research.md quyết định 1).
+    ///
+    /// Khi 1 segment lỗi infer, gọi `on_error(segment, err)` rồi tiếp tục segment kế tiếp,
+    /// không dừng cả hàm — lỗi 1 segment không được lan ra toàn pipeline (PBI 15, FR-005;
+    /// xem research.md quyết định 2). Segment lỗi không có chunk tương ứng trong kết quả trả về.
     pub async fn process_segments(
         &self,
         segments: Vec<SegmentReady>,
         mut on_chunk: impl FnMut(&SegmentReady, &TranscriptChunk),
+        mut on_error: impl FnMut(&SegmentReady, &CoreError),
     ) -> Result<Vec<TranscriptChunk>, CoreError> {
         let mut chunks = Vec::with_capacity(segments.len());
         for segment in segments {
@@ -32,9 +37,15 @@ impl<'a> TranscriptPipeline<'a> {
                 samples: segment.samples.clone(),
                 sample_rate: segment.sample_rate,
             };
-            let chunk = self.stt.transcribe(frame).await?;
-            on_chunk(&segment, &chunk);
-            chunks.push(chunk);
+            match self.stt.transcribe(frame).await {
+                Ok(chunk) => {
+                    on_chunk(&segment, &chunk);
+                    chunks.push(chunk);
+                }
+                Err(err) => {
+                    on_error(&segment, &err);
+                }
+            }
         }
         Ok(chunks)
     }
@@ -91,6 +102,38 @@ mod tests {
         }
     }
 
+    /// STT trả lỗi infer (`CoreError::Provider`) đúng vào các lần gọi nằm trong
+    /// `fail_at_calls` (0-based), còn lại trả `Ok` (PBI 15, giả lập lỗi infer giữa các segment
+    /// thành công).
+    struct FlakySpeechToText {
+        call_count: AtomicUsize,
+        fail_at_calls: Vec<usize>,
+    }
+
+    impl FlakySpeechToText {
+        fn new(fail_at_calls: Vec<usize>) -> Self {
+            Self {
+                call_count: AtomicUsize::new(0),
+                fail_at_calls,
+            }
+        }
+    }
+
+    #[async_trait]
+    impl SpeechToText for FlakySpeechToText {
+        async fn transcribe(&self, _frame: AudioFrame) -> Result<TranscriptChunk, CoreError> {
+            let n = self.call_count.fetch_add(1, Ordering::SeqCst);
+            if self.fail_at_calls.contains(&n) {
+                Err(CoreError::Provider(format!("lỗi infer giả lập tại lần gọi {n}")))
+            } else {
+                Ok(TranscriptChunk {
+                    text: format!("doan-{n}"),
+                    is_final: true,
+                })
+            }
+        }
+    }
+
     fn segment_with(samples: Vec<f32>) -> SegmentReady {
         SegmentReady {
             start_frame_index: 0,
@@ -111,7 +154,7 @@ mod tests {
             segment_with(vec![0.0; 4]),
         ];
         let chunks = pipeline
-            .process_segments(segments, |_, _| {})
+            .process_segments(segments, |_, _| {}, |_, _| {})
             .await
             .unwrap();
 
@@ -127,7 +170,7 @@ mod tests {
         let pipeline = TranscriptPipeline::new(&stt);
 
         let chunks = pipeline
-            .process_segments(Vec::new(), |_, _| {})
+            .process_segments(Vec::new(), |_, _| {}, |_, _| {})
             .await
             .unwrap();
 
@@ -148,12 +191,16 @@ mod tests {
         let received: Mutex<Vec<(bool, String)>> = Mutex::new(Vec::new());
 
         pipeline
-            .process_segments(segments, |_seg, chunk| {
-                received
-                    .lock()
-                    .unwrap()
-                    .push((chunk.is_final, chunk.text.clone()));
-            })
+            .process_segments(
+                segments,
+                |_seg, chunk| {
+                    received
+                        .lock()
+                        .unwrap()
+                        .push((chunk.is_final, chunk.text.clone()));
+                },
+                |_, _| {},
+            )
             .await
             .unwrap();
 
@@ -176,9 +223,13 @@ mod tests {
         let call_count = AtomicUsize::new(0);
 
         pipeline
-            .process_segments(Vec::new(), |_, _| {
-                call_count.fetch_add(1, Ordering::SeqCst);
-            })
+            .process_segments(
+                Vec::new(),
+                |_, _| {
+                    call_count.fetch_add(1, Ordering::SeqCst);
+                },
+                |_, _| {},
+            )
             .await
             .unwrap();
 
@@ -206,12 +257,16 @@ mod tests {
         let received: Mutex<Vec<(bool, String)>> = Mutex::new(Vec::new());
 
         pipeline
-            .process_segments(segments, |_seg, chunk| {
-                received
-                    .lock()
-                    .unwrap()
-                    .push((chunk.is_final, chunk.text.clone()));
-            })
+            .process_segments(
+                segments,
+                |_seg, chunk| {
+                    received
+                        .lock()
+                        .unwrap()
+                        .push((chunk.is_final, chunk.text.clone()));
+                },
+                |_, _| {},
+            )
             .await
             .unwrap();
 
@@ -223,5 +278,67 @@ mod tests {
                 (true, "xin chào".to_string()),
             ]
         );
+    }
+
+    // PBI 15 — T009: 1 segment lỗi infer giữa 2 segment thành công, lỗi không lan ra toàn
+    // pipeline, segment lỗi không có chunk tương ứng trong kết quả trả về.
+    #[tokio::test]
+    async fn loi_infer_1_segment_khong_lam_dung_cac_segment_khac() {
+        let stt = FlakySpeechToText::new(vec![1]);
+        let pipeline = TranscriptPipeline::new(&stt);
+
+        let segments = vec![
+            segment_with(vec![0.0; 4]),
+            segment_with(vec![0.0; 4]),
+            segment_with(vec![0.0; 4]),
+        ];
+        let errors: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+        let chunks = pipeline
+            .process_segments(
+                segments,
+                |_, _| {},
+                |_seg, err| {
+                    errors.lock().unwrap().push(err.to_string());
+                },
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(chunks.len(), 2);
+        assert_eq!(chunks[0].text, "doan-0");
+        assert_eq!(chunks[1].text, "doan-2");
+
+        let errors = errors.into_inner().unwrap();
+        assert_eq!(errors.len(), 1);
+    }
+
+    // PBI 15 — T010: nhiều segment liên tiếp đều lỗi infer, mỗi lỗi báo đúng 1 lần, không
+    // panic, hàm vẫn trả Ok.
+    #[tokio::test]
+    async fn nhieu_segment_lien_tiep_loi_infer_khong_panic() {
+        let stt = FlakySpeechToText::new(vec![0, 1, 2]);
+        let pipeline = TranscriptPipeline::new(&stt);
+
+        let segments = vec![
+            segment_with(vec![0.0; 4]),
+            segment_with(vec![0.0; 4]),
+            segment_with(vec![0.0; 4]),
+        ];
+        let error_count = AtomicUsize::new(0);
+
+        let chunks = pipeline
+            .process_segments(
+                segments,
+                |_, _| {},
+                |_, _| {
+                    error_count.fetch_add(1, Ordering::SeqCst);
+                },
+            )
+            .await
+            .unwrap();
+
+        assert!(chunks.is_empty());
+        assert_eq!(error_count.load(Ordering::SeqCst), 3);
     }
 }

@@ -3,7 +3,8 @@ pub mod core;
 
 use core::{
     AudioDeviceInfo, CaptureSessionState, CpalAudioHost, LoopbackAudioSource, MicAudioSource,
-    MixedAudioSource, TranscriptPipeline, VadPipeline, WhisperSpeechToText, list_input_devices,
+    MixedAudioSource, ModelErrorKind, TranscriptPipeline, VadPipeline, WhisperSpeechToText,
+    list_input_devices,
 };
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
@@ -26,6 +27,29 @@ impl TranscriptEventPayload {
             end_frame_index: segment.end_frame_index,
             text: chunk.text.clone(),
             is_final: chunk.is_final,
+        }
+    }
+}
+
+/// Payload sự kiện Tauri `model-error` phát ra UI khi model STT lỗi nạp hoặc lỗi infer
+/// (camelCase, PBI 15; xem data-model.md).
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct ModelErrorPayload {
+    kind: &'static str,
+    message: String,
+    segment_start_frame_index: Option<usize>,
+}
+
+impl From<core::ModelErrorEvent> for ModelErrorPayload {
+    fn from(event: core::ModelErrorEvent) -> Self {
+        Self {
+            kind: match event.kind {
+                ModelErrorKind::Load => "load",
+                ModelErrorKind::Infer => "infer",
+            },
+            message: event.message,
+            segment_start_frame_index: event.segment_start_frame_index,
         }
     }
 }
@@ -71,9 +95,25 @@ fn start_capture(app_handle: AppHandle, session: State<CaptureSessionState>) -> 
     let mut pipeline = VadPipeline::new();
     // STT local whisper.cpp: không bắt buộc để chạy capture/VAD; nếu thiếu model, chỉ bỏ qua
     // bước phát transcript-partial/transcript-final, vad-segment vẫn phát như cũ (PBI 14).
-    let stt = std::env::var("WHISPER_MODEL_PATH")
-        .ok()
-        .and_then(|path| WhisperSpeechToText::new(&path).ok());
+    // Nếu có cấu hình đường dẫn nhưng nạp lỗi (thiếu file/file hỏng), báo đúng 1 lần cho UI
+    // qua event `model-error` loại "load" trước khi tiếp tục phiên không có STT (PBI 15,
+    // FR-001/FR-004; xem research.md quyết định 3).
+    let stt = std::env::var("WHISPER_MODEL_PATH").ok().and_then(|path| {
+        match WhisperSpeechToText::new(&path) {
+            Ok(stt) => Some(stt),
+            Err(err) => {
+                let _ = app_handle.emit(
+                    "model-error",
+                    ModelErrorPayload::from(core::ModelErrorEvent {
+                        kind: ModelErrorKind::Load,
+                        message: err.to_string(),
+                        segment_start_frame_index: None,
+                    }),
+                );
+                None
+            }
+        }
+    });
     let rt = tokio::runtime::Builder::new_current_thread()
         .build()
         .map_err(|e| e.to_string())?;
@@ -98,6 +138,18 @@ fn start_capture(app_handle: AppHandle, session: State<CaptureSessionState>) -> 
                                     };
                                     let _ = app_handle
                                         .emit(event, TranscriptEventPayload::from(seg, chunk));
+                                },
+                                |seg, err| {
+                                    let _ = app_handle.emit(
+                                        "model-error",
+                                        ModelErrorPayload::from(core::ModelErrorEvent {
+                                            kind: ModelErrorKind::Infer,
+                                            message: err.to_string(),
+                                            segment_start_frame_index: Some(
+                                                seg.start_frame_index,
+                                            ),
+                                        }),
+                                    );
                                 },
                             ));
                             if let Err(err) = result {
