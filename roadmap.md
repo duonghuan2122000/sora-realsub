@@ -28,7 +28,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 ## M3 — STT streaming (local)
 
 - [x] Implement `SpeechToText` bằng model local (whisper.cpp hoặc faster-whisper), test gửi file audio mẫu → nhận text đúng (PBI 12: `whisper-rs`, xác nhận bằng model + giọng nói thật)
-- [ ] Ghép STT vào luồng: segment từ VAD → gửi STT → nhận text, test end-to-end với audio mẫu
+- [x] Ghép STT vào luồng: segment từ VAD → gửi STT → nhận text, test end-to-end với audio mẫu (PBI 13: `TranscriptPipeline`)
 - [ ] Event Tauri `transcript-partial` (text tạm, có thể sửa) và `transcript-final` (text chốt), test UI nhận đúng thứ tự
 - [ ] Xử lý lỗi runtime model (thiếu model file, lỗi load/infer, thông báo), test giả lập các case lỗi trên
 
