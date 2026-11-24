@@ -20,7 +20,7 @@ Toàn bộ chạy trên `tokio` async runtime bên Core Rust.
 `AudioSource`, `SpeechToText`, `Translator`, `SubtitleSink` — cloud/local là hai implementation khác nhau của cùng trait, xem [[Kien-truc-core-ui]].
 
 ## Trạng thái hiện tại
-Chưa triển khai — mới ở mức thiết kế tài liệu. Xem [[Trang-thai-ma-nguon]].
+Bước 1 (lấy âm thanh) đã bắt đầu: capture mic thật qua `cpal` (PBI 5), chưa có loopback hệ thống/mix. Các bước 2-6 (resample, VAD, STT, dịch, hiển thị) vẫn chưa triển khai. Xem [[Trang-thai-ma-nguon]], [[PBI-5-capture-mic-pcm]].
 
 ## Liên quan
-[[Tong-quan-du-an]], [[Core-Rust]], [[Rui-ro-ky-thuat]]
+[[Tong-quan-du-an]], [[Core-Rust]], [[Rui-ro-ky-thuat]], [[PBI-5-capture-mic-pcm]]

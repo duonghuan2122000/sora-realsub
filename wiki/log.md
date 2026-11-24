@@ -6,3 +6,4 @@
 ## [2026-11-24] ingest | PBI 3: Định nghĩa trait Core AudioSource/SpeechToText/Translator/SubtitleSink (interface + mock test, app/src-tauri/src/core/), cập nhật Kien-truc-core-ui, Core-Rust, Cau-hoi-con-mo, Trang-thai-ma-nguon
 
 ## [2026-11-24] ingest | PBI 4 — Liệt kê thiết bị âm thanh đầu vào (spec/plan/tasks, code core/devices.rs + DeviceSelector.vue, test pass)
+## [2026-11-24] ingest | PBI 5 — Capture mic thành PCM buffer (spec/plan/tasks/evidence, code core/mic_audio_source.rs + src/bin/capture_mic_to_wav.rs, hound thêm vào [dependencies], lib.rs pub mod core, 15/15 test pass, cập nhật Core-Rust, Trang-thai-ma-nguon, Pipeline-xu-ly-audio)

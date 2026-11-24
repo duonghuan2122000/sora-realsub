@@ -21,6 +21,7 @@
 
 ## PBI đã thi công
 - [[PBI-4-liet-ke-thiet-bi-mic]] — liệt kê thiết bị audio input qua Tauri command, UI chọn mic (M1, 2026-11-24)
+- [[PBI-5-capture-mic-pcm]] — capture mic thành PCM qua `cpal` (cài đặt thật đầu tiên của trait `AudioSource`), test bằng ghi .wav (M1, 2026-11-24)
 
 ## Trạng thái code hiện tại
-- [[Trang-thai-ma-nguon]] — snapshot app/ (2026-11-24, cập nhật sau PBI 4): logic nghiệp vụ thật đầu tiên (liệt kê thiết bị mic), interface Core (PBI 3) vẫn chưa có cài đặt khác
+- [[Trang-thai-ma-nguon]] — snapshot app/ (2026-11-24, cập nhật sau PBI 5): 2 lát cắt nghiệp vụ thật trong M1 (liệt kê thiết bị, capture mic), interface Core (PBI 3) vẫn chưa có cài đặt loopback/VAD/STT/dịch
