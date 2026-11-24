@@ -24,6 +24,7 @@
 - [[PBI-5-capture-mic-pcm]] — capture mic thành PCM qua `cpal` (cài đặt thật đầu tiên của trait `AudioSource`), test bằng ghi .wav (M1, 2026-11-24)
 - [[PBI-6-capture-loopback-wasapi]] — capture loopback hệ thống qua crate `wasapi` (cpal không hỗ trợ loopback), test bằng ghi .wav (M1, 2026-11-24)
 - [[PBI-7-tron-mic-loopback]] — trộn mic + loopback thành 1 stream qua `MixedAudioSource` (buffer trung gian + thread trộn, resample linear), test bằng ghi .wav (M1, 2026-11-24)
+- [[PBI-8-start-stop-capture]] — lệnh `start_capture`/`stop_capture` qua Tauri IPC (`CaptureSessionState`), hoàn tất M1 (M1, 2026-11-24)
 
 ## Trạng thái code hiện tại
-- [[Trang-thai-ma-nguon]] — snapshot app/ (2026-11-24, cập nhật sau PBI 7): 4 lát cắt nghiệp vụ thật trong M1 (liệt kê thiết bị, capture mic, capture loopback, trộn mic+loopback), interface Core (PBI 3) vẫn chưa có cài đặt VAD/STT/dịch
+- [[Trang-thai-ma-nguon]] — snapshot app/ (2026-11-24, cập nhật sau PBI 8): M1 (Audio Capture) hoàn tất 5/5 — liệt kê thiết bị, capture mic, capture loopback, trộn mic+loopback, start/stop IPC; interface Core (PBI 3) vẫn chưa có cài đặt VAD/STT/dịch

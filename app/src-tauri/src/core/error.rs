@@ -8,4 +8,8 @@ pub enum CoreError {
     Provider(String),
     #[error("đã bị hủy")]
     Cancelled,
+    #[error("đã có phiên đang chạy")]
+    AlreadyRunning,
+    #[error("không có phiên nào để dừng")]
+    NotRunning,
 }

@@ -1,6 +1,7 @@
 #![allow(unused_imports)] // PBI 3: interface-only, chưa có code tiêu thụ public API này
 
 mod audio_source;
+mod capture_session;
 mod devices;
 mod error;
 mod loopback_audio_source;
@@ -12,6 +13,7 @@ mod translator;
 mod types;
 
 pub use audio_source::AudioSource;
+pub use capture_session::CaptureSessionState;
 pub use devices::{AudioDeviceInfo, AudioHost, CpalAudioHost, list_input_devices};
 pub use error::CoreError;
 pub use loopback_audio_source::LoopbackAudioSource;
