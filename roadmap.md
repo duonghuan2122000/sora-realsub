@@ -8,7 +8,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 
 - [x] Chốt OS mục tiêu (Windows trước, macOS sau hay song song)
 - [x] Chốt cặp ngôn ngữ mặc định (ví dụ English → Vietnamese)
-- [ ] Chốt hướng xử lý: cloud / local / cả hai (ảnh hưởng trait STT, Translator)
+- [x] Chốt hướng xử lý: local (ảnh hưởng trait STT, Translator)
 - [ ] Định nghĩa trait Core: `AudioSource`, `SpeechToText`, `Translator`, `SubtitleSink` (chỉ interface, chưa implement)
 
 ## M1 — Bắt âm thanh (Audio Capture)
