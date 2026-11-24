@@ -3,6 +3,7 @@
 mod audio_source;
 mod devices;
 mod error;
+mod mic_audio_source;
 mod speech_to_text;
 mod subtitle_sink;
 mod translator;
@@ -11,6 +12,7 @@ mod types;
 pub use audio_source::AudioSource;
 pub use devices::{AudioDeviceInfo, AudioHost, CpalAudioHost, list_input_devices};
 pub use error::CoreError;
+pub use mic_audio_source::MicAudioSource;
 pub use speech_to_text::SpeechToText;
 pub use subtitle_sink::SubtitleSink;
 pub use translator::Translator;

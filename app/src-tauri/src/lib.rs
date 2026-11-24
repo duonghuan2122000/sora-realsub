@@ -1,5 +1,5 @@
 #[allow(dead_code)] // PBI 3: chỉ định nghĩa interface, chưa có cài đặt thật dùng tới
-mod core;
+pub mod core;
 
 use core::{AudioDeviceInfo, CpalAudioHost, list_input_devices};
 
