@@ -4,8 +4,8 @@ use super::types::AudioFrame;
 use voice_activity_detector::VoiceActivityDetector;
 
 /// Silero VAD v5 chỉ nhận 512 sample/frame ở 16kHz (xem research.md PBI 9).
-const VAD_SAMPLE_RATE: u32 = 16_000;
-const VAD_CHUNK_SIZE: usize = 512;
+pub(crate) const VAD_SAMPLE_RATE: u32 = 16_000;
+pub(crate) const VAD_CHUNK_SIZE: usize = 512;
 const DEFAULT_SPEECH_THRESHOLD: f32 = 0.5;
 
 /// Nhãn speech/silence cho 1 frame cố định, giữ đúng thứ tự thời gian gốc.
@@ -52,7 +52,7 @@ pub fn detect_with_threshold(
 }
 
 /// Nối mẫu của toàn bộ `AudioFrame` (resample về 16kHz mono nếu cần) thành 1 buffer liên tục.
-fn resample_all(frames: &[AudioFrame]) -> Vec<f32> {
+pub(crate) fn resample_all(frames: &[AudioFrame]) -> Vec<f32> {
     let mut out = Vec::new();
     for frame in frames {
         out.extend(resample_linear(

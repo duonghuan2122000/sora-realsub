@@ -1,7 +1,7 @@
 use super::vad::FrameLabel;
 
 /// ~300ms silence @ frame VAD 512 sample/16kHz (~32ms/frame) trước khi coi là điểm cắt (xem research.md PBI 10).
-const DEFAULT_MIN_SILENCE_FRAMES: usize = 9;
+pub(crate) const DEFAULT_MIN_SILENCE_FRAMES: usize = 9;
 
 /// Một lượt nói liên tục, biểu diễn bằng vùng chỉ số frame (theo `FrameLabel.frame_index`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

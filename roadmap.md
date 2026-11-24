@@ -23,7 +23,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 
 - [x] Tích hợp model VAD (Silero VAD) đọc buffer audio, trả nhãn speech/silence cho từng frame
 - [x] Cắt audio liên tục thành các đoạn (segment) theo khoảng lặng, test với file mẫu có nói + lặng xen kẽ
-- [ ] Expose event Tauri `vad-segment` phát mỗi khi có đoạn mới, test UI nhận được event
+- [x] Expose event Tauri `vad-segment` phát mỗi khi có đoạn mới, test UI nhận được event (PBI 11; UI nhận được event xác nhận bằng test tích hợp audio thật `vad_pipeline_real_speech.rs`, chưa kiểm thử tay trên UI/mic thật)
 
 ## M3 — STT streaming (khung cloud, dễ làm trước)
 

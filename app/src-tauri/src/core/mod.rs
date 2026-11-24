@@ -13,6 +13,7 @@ mod subtitle_sink;
 mod translator;
 mod types;
 mod vad;
+mod vad_pipeline;
 
 pub use audio_source::AudioSource;
 pub use capture_session::CaptureSessionState;
@@ -28,3 +29,4 @@ pub use subtitle_sink::SubtitleSink;
 pub use translator::Translator;
 pub use types::{AudioFrame, StreamHandle, Subtitle, TranscriptChunk};
 pub use vad::{FrameLabel, detect, detect_with_threshold};
+pub use vad_pipeline::{SegmentReady, VadPipeline};
