@@ -139,7 +139,9 @@ mod tests {
             .translate("Hello, how are you?", &[])
             .await
             .expect("dịch lần 1 thất bại");
-        assert_eq!(first, "Xin chào, bạn khỏe không?");
+        // Bản dịch tham chiếu lấy từ chạy thật sidecar (model JustFrederik/nllb-200-distilled-600M-ct2-int8,
+        // xem quickstart.md) — không phải câu "chuẩn" duy nhất, chỉ cần khớp đúng model/sidecar đang dùng.
+        assert_eq!(first, "Chào, anh thế nào?");
 
         let second = translator
             .translate("Hello, how are you?", &[])

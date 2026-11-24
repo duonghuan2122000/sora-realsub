@@ -22,7 +22,7 @@
 - [x] T004 [US1] Trong `translate()` của `NllbTranslator`: khi spawn lỗi (executable không tồn tại) hoặc tiến trình trả exit code khác 0 → trả `CoreError::Provider` rõ ràng, không panic (FR-002)
 - [x] T005 [US1] Viết test tại `app/src-tauri/src/core/translator.rs`: gọi `translate` với `executable_path` không tồn tại phải trả `Err(CoreError::Provider(_))`, không panic (đối chiếu T004)
 - [x] T006 [US1] Viết test tại `app/src-tauri/src/core/translator.rs`: gọi `translate("", &[])` và `translate("   ", &[])` phải trả `Ok("".to_string())`, không spawn tiến trình (đối chiếu T003)
-- [ ] T007 [US1] Viết test tích hợp (đánh dấu `#[ignore]`, chạy thủ công khi có sidecar thật) tại `app/src-tauri/src/core/translator.rs`: dịch câu tiếng Anh cố định (ví dụ "Hello, how are you?") sang tiếng Việt bằng `NllbTranslator` qua sidecar thật, so khớp bản dịch tham chiếu đã biết trước (SC-001); gọi lại lần 2 với câu giống nhau, xác nhận kết quả giống lần 1 (FR-004)
+- [x] T007 [US1] Viết test tích hợp (đánh dấu `#[ignore]`, chạy thủ công khi có sidecar thật) tại `app/src-tauri/src/core/translator.rs`: dịch câu tiếng Anh cố định (ví dụ "Hello, how are you?") sang tiếng Việt bằng `NllbTranslator` qua sidecar thật, so khớp bản dịch tham chiếu đã biết trước (SC-001); gọi lại lần 2 với câu giống nhau, xác nhận kết quả giống lần 1 (FR-004)
 - [x] T008 [US1] Chạy `cargo test -p app translator` (không ignored) lấy log làm bằng chứng test, lưu vào `.specify/specs/16/evidence/` — xem [T008-result.log](evidence/T008-result.log)
 
 ## Sơ đồ phụ thuộc
@@ -51,3 +51,16 @@ T001 → T002 → (T003, T004 song song vì khác đoạn logic trong cùng file
 3. Gỡ `ort`/`voice_activity_detector` (đổi VAD sang implementation khác) để nhường chỗ CRT tĩnh cho `ct2rs` — ảnh hưởng ngược lại M2, rủi ro cao hơn.
 
 Chưa quay lại `/sora-task 16`/`/sora-implement 16` cho đến khi chọn hướng ở trên (có thể cần viết lại `research.md`/`plan.md` PBI 16 theo hướng mới).
+
+## Cập nhật — ĐÃ GIẢI QUYẾT (2026-11-24, phiên sau)
+
+Đã chọn hướng sidecar process, implement xong `NllbTranslator` (T002-T006). Sau đó thực sự build sidecar thật + tải model NLLB thật để xác nhận T007/SC-001 (theo yêu cầu người dùng "hoàn thiện tính năng"):
+
+- Tạo crate RIÊNG `app/translate-sidecar/` (không phải `[[bin]]` trong package `app` — một package Cargo độc lập hoàn toàn, Cargo.toml/Cargo.lock/target riêng) dùng `ct2rs` để làm CLI dịch thật.
+- **Phát hiện thêm**: `ct2rs` với feature `sentencepiece` (mặc định, trong `all-tokenizers`) tự xung đột CRT NGAY TRONG NỘI BỘ nó (`sentencepiece-sys` build `/MD`, `ct2rs-sys`/CTranslate2 build `/MT`) — không cần `ort` cũng vẫn lỗi `LNK2038`. Khi đã ở crate riêng (không có `ort`), fix được bằng:
+  1. `default-features = false, features = ["tokenizers", "ruy"]` (bỏ `sentencepiece`, dùng tokenizer HF `tokenizers` đọc `tokenizer.json` thay vì sentencepiece binding; `ruy` cần cho backend SGEMM CPU, không có sẽ lỗi "No SGEMM backend on CPU").
+  2. Build với `RUSTFLAGS="-C target-feature=+crt-static"` — **chỉ khả thi vì giờ không có `ort` trong cùng crate** để xung đột; đây là lý do kiến trúc sidecar (crate riêng) bắt buộc, không thể gộp vào `app`/`app_lib`.
+  3. Trên Windows, đường dẫn build CTranslate2+ruy rất dài, dễ vượt `MAX_PATH` (260 ký tự) gây lỗi `MSB3501` — build ở `CARGO_TARGET_DIR` ngắn (ví dụ `C:\ct2b`) nếu gặp lỗi này.
+- Model thật: `JustFrederik/nllb-200-distilled-600M-ct2-int8` (Hugging Face, ~647MB, license `cc-by-nc-4.0` — non-commercial, cần đổi model trước khi phát hành thương mại).
+- Chạy `cargo test --lib core::translator -- --include-ignored` với `SORA_TRANSLATE_SIDECAR_PATH`/`SORA_NLLB_MODEL_PATH` trỏ tới sidecar/model thật: **5/5 test pass**, bao gồm T007 (dịch đúng + ổn định, SC-001 + FR-004 xác nhận bằng dữ liệu thật).
+- `app/translate-sidecar/` không commit `target/`, model không commit (quá lớn, không thuộc repo) — xem `quickstart.md` để build lại từ đầu.

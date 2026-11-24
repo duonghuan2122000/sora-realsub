@@ -1,0 +1,18 @@
+[package]
+name = "translate-sidecar"
+version = "0.1.0"
+edition = "2024"
+description = "CLI dịch local (NLLB-200 qua CTranslate2), chạy độc lập khỏi app chính để tránh xung đột CRT native với ort (xem wiki PBI-16-dich-local-sidecar)"
+
+[[bin]]
+name = "translate-sidecar"
+path = "src/main.rs"
+
+[dependencies]
+# Chỉ dùng feature "tokenizers" (đọc tokenizer.json bằng crate `tokenizers`, pure Rust) —
+# KHÔNG dùng "sentencepiece" (binding native, build.rs cũng force CRT tĩnh như ct2rs-sys,
+# xung đột ngay trong nội bộ ct2rs khi link, không liên quan gì đến `ort`).
+ct2rs = { version = "0.11", default-features = false, features = ["tokenizers", "ruy"] }
+
+[profile.release]
+opt-level = 3
