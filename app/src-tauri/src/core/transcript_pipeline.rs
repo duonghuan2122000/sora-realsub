@@ -15,18 +15,26 @@ impl<'a> TranscriptPipeline<'a> {
     }
 
     /// Đưa từng segment qua STT theo đúng thứ tự trong `segments`, trả về `TranscriptChunk`
-    /// tương ứng. Danh sách rỗng trả `Vec` rỗng, không lỗi (FR-003).
+    /// tương ứng. Danh sách rỗng trả `Vec` rỗng, không lỗi (FR-003 PBI 13).
+    ///
+    /// Gọi `on_chunk(segment, chunk)` ngay sau khi segment đó có kết quả, để nơi gọi (ví dụ
+    /// `lib.rs`) phát event `transcript-partial`/`transcript-final` theo đúng thứ tự thời gian
+    /// thực, không phải đợi toàn bộ `segments` xử lý xong (PBI 14, FR-001/FR-002/FR-003; xem
+    /// research.md quyết định 1).
     pub async fn process_segments(
         &self,
         segments: Vec<SegmentReady>,
+        mut on_chunk: impl FnMut(&SegmentReady, &TranscriptChunk),
     ) -> Result<Vec<TranscriptChunk>, CoreError> {
         let mut chunks = Vec::with_capacity(segments.len());
         for segment in segments {
             let frame = AudioFrame {
-                samples: segment.samples,
+                samples: segment.samples.clone(),
                 sample_rate: segment.sample_rate,
             };
-            chunks.push(self.stt.transcribe(frame).await?);
+            let chunk = self.stt.transcribe(frame).await?;
+            on_chunk(&segment, &chunk);
+            chunks.push(chunk);
         }
         Ok(chunks)
     }
@@ -37,6 +45,7 @@ mod tests {
     use super::*;
     use async_trait::async_trait;
     use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Mutex;
 
     struct MockSpeechToText {
         call_count: AtomicUsize,
@@ -61,6 +70,27 @@ mod tests {
         }
     }
 
+    /// STT trả lần lượt các `TranscriptChunk` định trước theo mỗi lần gọi `transcribe`
+    /// (PBI 14, giả lập partial → final cho cùng 1 segment).
+    struct ScriptedSpeechToText {
+        chunks: Mutex<std::vec::IntoIter<TranscriptChunk>>,
+    }
+
+    impl ScriptedSpeechToText {
+        fn new(chunks: Vec<TranscriptChunk>) -> Self {
+            Self {
+                chunks: Mutex::new(chunks.into_iter()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl SpeechToText for ScriptedSpeechToText {
+        async fn transcribe(&self, _frame: AudioFrame) -> Result<TranscriptChunk, CoreError> {
+            Ok(self.chunks.lock().unwrap().next().expect("hết chunk đã định trước"))
+        }
+    }
+
     fn segment_with(samples: Vec<f32>) -> SegmentReady {
         SegmentReady {
             start_frame_index: 0,
@@ -80,7 +110,10 @@ mod tests {
             segment_with(vec![0.0; 4]),
             segment_with(vec![0.0; 4]),
         ];
-        let chunks = pipeline.process_segments(segments).await.unwrap();
+        let chunks = pipeline
+            .process_segments(segments, |_, _| {})
+            .await
+            .unwrap();
 
         assert_eq!(chunks.len(), 3);
         assert_eq!(chunks[0].text, "doan-0");
@@ -93,8 +126,102 @@ mod tests {
         let stt = MockSpeechToText::new();
         let pipeline = TranscriptPipeline::new(&stt);
 
-        let chunks = pipeline.process_segments(Vec::new()).await.unwrap();
+        let chunks = pipeline
+            .process_segments(Vec::new(), |_, _| {})
+            .await
+            .unwrap();
 
         assert!(chunks.is_empty());
+    }
+
+    // PBI 14 — T004: callback phát transcript-final đúng thứ tự cho nhiều segment.
+    #[tokio::test]
+    async fn phat_transcript_final_dung_thu_tu() {
+        let stt = MockSpeechToText::new();
+        let pipeline = TranscriptPipeline::new(&stt);
+
+        let segments = vec![
+            segment_with(vec![0.0; 4]),
+            segment_with(vec![0.0; 4]),
+            segment_with(vec![0.0; 4]),
+        ];
+        let received: Mutex<Vec<(bool, String)>> = Mutex::new(Vec::new());
+
+        pipeline
+            .process_segments(segments, |_seg, chunk| {
+                received
+                    .lock()
+                    .unwrap()
+                    .push((chunk.is_final, chunk.text.clone()));
+            })
+            .await
+            .unwrap();
+
+        let received = received.into_inner().unwrap();
+        assert_eq!(
+            received,
+            vec![
+                (true, "doan-0".to_string()),
+                (true, "doan-1".to_string()),
+                (true, "doan-2".to_string()),
+            ]
+        );
+    }
+
+    // PBI 14 — T005: danh sách segment rỗng không gọi callback lần nào.
+    #[tokio::test]
+    async fn danh_sach_rong_khong_goi_callback() {
+        let stt = MockSpeechToText::new();
+        let pipeline = TranscriptPipeline::new(&stt);
+        let call_count = AtomicUsize::new(0);
+
+        pipeline
+            .process_segments(Vec::new(), |_, _| {
+                call_count.fetch_add(1, Ordering::SeqCst);
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(call_count.load(Ordering::SeqCst), 0);
+    }
+
+    // PBI 14 — T008: với 1 segment, STT trả partial rồi final (giả lập) → callback phải nhận
+    // đúng thứ tự partial trước, final sau. `WhisperSpeechToText` thật hiện không phát sinh
+    // nhiều chunk/segment; test này xác nhận hành vi tổng quát của callback khi STT làm được.
+    #[tokio::test]
+    async fn partial_den_truoc_final_cung_segment() {
+        let stt = ScriptedSpeechToText::new(vec![
+            TranscriptChunk {
+                text: "xin ch".to_string(),
+                is_final: false,
+            },
+            TranscriptChunk {
+                text: "xin chào".to_string(),
+                is_final: true,
+            },
+        ]);
+        let pipeline = TranscriptPipeline::new(&stt);
+
+        let segments = vec![segment_with(vec![0.0; 4]), segment_with(vec![0.0; 4])];
+        let received: Mutex<Vec<(bool, String)>> = Mutex::new(Vec::new());
+
+        pipeline
+            .process_segments(segments, |_seg, chunk| {
+                received
+                    .lock()
+                    .unwrap()
+                    .push((chunk.is_final, chunk.text.clone()));
+            })
+            .await
+            .unwrap();
+
+        let received = received.into_inner().unwrap();
+        assert_eq!(
+            received,
+            vec![
+                (false, "xin ch".to_string()),
+                (true, "xin chào".to_string()),
+            ]
+        );
     }
 }

@@ -73,7 +73,7 @@ async fn pipeline_vad_stt_tra_ve_text_dung_so_luong_va_thu_tu() {
 
     let pipeline = TranscriptPipeline::new(&stt);
     let chunks = pipeline
-        .process_segments(segments)
+        .process_segments(segments, |_, _| {})
         .await
         .expect("process_segments không lỗi");
 
@@ -112,7 +112,7 @@ async fn audio_toan_im_lang_khong_sinh_text_nao_khong_loi() {
 
     let pipeline = TranscriptPipeline::new(&stt);
     let chunks = pipeline
-        .process_segments(segments)
+        .process_segments(segments, |_, _| {})
         .await
         .expect("process_segments không lỗi với danh sách rỗng");
 
