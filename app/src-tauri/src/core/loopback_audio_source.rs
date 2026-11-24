@@ -3,7 +3,7 @@ use super::error::CoreError;
 use super::types::{AudioFrame, StreamHandle};
 use std::sync::mpsc;
 use std::thread;
-use wasapi::{Direction, DeviceEnumerator, SampleType, StreamMode, initialize_mta};
+use wasapi::{DeviceEnumerator, Direction, SampleType, StreamMode, initialize_mta};
 
 /// Cài đặt `AudioSource` thật, capture loopback từ thiết bị output mặc định
 /// của hệ thống (Windows WASAPI loopback), qua crate `wasapi`.
@@ -81,8 +81,9 @@ impl AudioSource for LoopbackAudioSource {
                 let channels = format.get_nchannels() as usize;
 
                 let mut audio_client = device.get_iaudioclient().map_err(|e| e.to_string())?;
-                let (_def_time, min_time) =
-                    audio_client.get_device_period().map_err(|e| e.to_string())?;
+                let (_def_time, min_time) = audio_client
+                    .get_device_period()
+                    .map_err(|e| e.to_string())?;
                 let mode = StreamMode::EventsShared {
                     autoconvert: true,
                     buffer_duration_hns: min_time,
@@ -90,7 +91,9 @@ impl AudioSource for LoopbackAudioSource {
                 audio_client
                     .initialize_client(&format, &Direction::Capture, &mode)
                     .map_err(|e| e.to_string())?;
-                let event_handle = audio_client.set_get_eventhandle().map_err(|e| e.to_string())?;
+                let event_handle = audio_client
+                    .set_get_eventhandle()
+                    .map_err(|e| e.to_string())?;
                 let capture_client = audio_client
                     .get_audiocaptureclient()
                     .map_err(|e| e.to_string())?;
@@ -136,11 +139,8 @@ impl AudioSource for LoopbackAudioSource {
                         if whole_frames > 0 {
                             let n = whole_frames * frame_bytes;
                             let bytes: Vec<u8> = byte_buf.drain(..n).collect();
-                            let samples: Vec<f32> = decode_samples(
-                                &bytes,
-                                sample_type,
-                                bytes_per_sample,
-                            );
+                            let samples: Vec<f32> =
+                                decode_samples(&bytes, sample_type, bytes_per_sample);
                             on_frame(AudioFrame {
                                 samples: to_mono(&samples, channels),
                                 sample_rate,

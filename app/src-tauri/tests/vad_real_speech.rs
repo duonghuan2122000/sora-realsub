@@ -11,7 +11,11 @@ fn load_fixture_frame() -> AudioFrame {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/vad_sample.wav");
     let mut reader = WavReader::open(path).expect("mở file fixture vad_sample.wav");
     let spec = reader.spec();
-    assert_eq!(spec.sample_format, SampleFormat::Float, "fixture phải là PCM float32");
+    assert_eq!(
+        spec.sample_format,
+        SampleFormat::Float,
+        "fixture phải là PCM float32"
+    );
     let samples: Vec<f32> = reader
         .samples::<f32>()
         .map(|s| s.expect("đọc mẫu float"))
@@ -39,10 +43,7 @@ fn vad_phan_biet_duoc_doan_co_nang_luong_cao_va_thap_tren_ghi_am_thuc() {
     // Dùng lại đúng pipeline resample 16kHz mà `detect()` dùng nội bộ, để RMS tính trên
     // cùng dữ liệu đã đưa vào model (so sánh ngang hàng).
     let resampled = app_lib::core::resample_linear(&frame.samples, frame.sample_rate, 16_000);
-    let rms_per_frame: Vec<f32> = resampled
-        .chunks_exact(FRAME_SIZE)
-        .map(frame_rms)
-        .collect();
+    let rms_per_frame: Vec<f32> = resampled.chunks_exact(FRAME_SIZE).map(frame_rms).collect();
     assert_eq!(rms_per_frame.len(), labels.len());
 
     let speech_count = labels.iter().filter(|l| l.is_speech).count();
@@ -76,5 +77,8 @@ fn vad_phan_biet_duoc_doan_co_nang_luong_cao_va_thap_tren_ghi_am_thuc() {
     // Thứ tự nhãn trả về phải đúng thứ tự thời gian của fixture gốc.
     let indices: Vec<usize> = labels.iter().map(|l| l.frame_index).collect();
     let expected: Vec<usize> = (0..labels.len()).collect();
-    assert_eq!(indices, expected, "nhãn VAD phải giữ đúng thứ tự frame_index theo thời gian");
+    assert_eq!(
+        indices, expected,
+        "nhãn VAD phải giữ đúng thứ tự frame_index theo thời gian"
+    );
 }

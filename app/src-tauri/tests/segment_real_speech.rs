@@ -9,7 +9,11 @@ fn load_fixture_samples() -> (Vec<f32>, u32) {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/vad_sample.wav");
     let mut reader = WavReader::open(path).expect("mở file fixture vad_sample.wav");
     let spec = reader.spec();
-    assert_eq!(spec.sample_format, SampleFormat::Float, "fixture phải là PCM float32");
+    assert_eq!(
+        spec.sample_format,
+        SampleFormat::Float,
+        "fixture phải là PCM float32"
+    );
     let samples: Vec<f32> = reader
         .samples::<f32>()
         .map(|s| s.expect("đọc mẫu float"))

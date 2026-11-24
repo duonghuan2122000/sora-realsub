@@ -53,8 +53,8 @@ impl CaptureSessionState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     /// Nguồn giả: khi `start` được gọi tăng `live`, khi `stop_fn` chạy giảm `live`.
     /// Đếm `live` sau khi dừng cho biết handle có được giải phóng đúng không.

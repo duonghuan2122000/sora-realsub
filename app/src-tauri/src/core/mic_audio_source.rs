@@ -56,9 +56,7 @@ impl AudioSource for MicAudioSource {
 
         let worker = thread::spawn(move || {
             let setup = (|| -> Result<cpal::Stream, String> {
-                let config = device
-                    .default_input_config()
-                    .map_err(|e| e.to_string())?;
+                let config = device.default_input_config().map_err(|e| e.to_string())?;
                 let sample_rate = config.sample_rate().0;
                 let channels = config.channels() as usize;
                 let err_fn = |err: cpal::StreamError| eprintln!("lỗi stream audio: {err}");
@@ -119,7 +117,9 @@ impl AudioSource for MicAudioSource {
             }
             Err(_) => {
                 let _ = worker.join();
-                Err(CoreError::Io("luồng capture audio dừng bất ngờ".to_string()))
+                Err(CoreError::Io(
+                    "luồng capture audio dừng bất ngờ".to_string(),
+                ))
             }
         }
     }

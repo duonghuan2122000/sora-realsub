@@ -28,6 +28,7 @@
 - [[PBI-9-vad-silero]] — gán nhãn speech/silence theo frame qua Silero VAD v5 (crate `voice_activity_detector`), bắt đầu M2; SC-001/002/003 đã xác nhận bằng fixture giọng nói thật (M2, 2026-11-24)
 - [[PBI-10-cat-segment-khoang-lang]] — cắt luồng audio thành segment theo khoảng lặng (state machine silence-hangover, không thêm dependency), xác nhận bằng audio thật ghép 2 lượt nói (M2, 2026-11-24)
 - [[PBI-11-vad-segment-event]] — streaming segmenter `VadPipeline` nối VAD+segment vào `start_capture` thật, phát event Tauri `vad-segment` ra UI, hoàn tất M2 (M2, 2026-11-24)
+- [[PBI-12-stt-local-whisper]] — cài đặt `WhisperSpeechToText` (whisper.cpp local) cho trait `SpeechToText`, bắt đầu M3; xác nhận bằng model + giọng nói thật, cần cài thêm LLVM/libclang để build (M3, 2026-11-24)
 
 ## Trạng thái code hiện tại
-- [[Trang-thai-ma-nguon]] — snapshot app/ (2026-11-24, cập nhật sau PBI 11): M1 (Audio Capture) hoàn tất 5/5; **M2 (VAD) hoàn tất 3/3**; interface Core (PBI 3) vẫn chưa có cài đặt STT/dịch (M3 trở đi)
+- [[Trang-thai-ma-nguon]] — snapshot app/ (2026-11-24, cập nhật sau PBI 12): M1 (Audio Capture) hoàn tất 5/5; M2 (VAD) hoàn tất 3/3; **M3 (STT streaming) bắt đầu 1/4** (cài đặt STT local, chưa ghép streaming); dịch vẫn chưa có cài đặt (M4 trở đi)

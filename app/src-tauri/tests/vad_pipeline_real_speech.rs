@@ -8,7 +8,11 @@ fn load_fixture() -> (Vec<f32>, u32) {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/vad_sample.wav");
     let mut reader = WavReader::open(path).expect("mở file fixture vad_sample.wav");
     let spec = reader.spec();
-    assert_eq!(spec.sample_format, SampleFormat::Float, "fixture phải là PCM float32");
+    assert_eq!(
+        spec.sample_format,
+        SampleFormat::Float,
+        "fixture phải là PCM float32"
+    );
     let samples: Vec<f32> = reader
         .samples::<f32>()
         .map(|s| s.expect("đọc mẫu float"))
@@ -29,7 +33,11 @@ fn streaming_tung_khoi_nho_phat_segment_dung_thu_tu_khong_trung() {
             samples: chunk.to_vec(),
             sample_rate,
         };
-        ready.extend(pipeline.push_frame(frame).expect("push_frame chạy thành công"));
+        ready.extend(
+            pipeline
+                .push_frame(frame)
+                .expect("push_frame chạy thành công"),
+        );
     }
     // Đẩy thêm lặng dài để chắc chắn đóng segment cuối, dù fixture gốc không đủ lặng ở cuối.
     let trailing_silence = AudioFrame {
@@ -48,7 +56,10 @@ fn streaming_tung_khoi_nho_phat_segment_dung_thu_tu_khong_trung() {
     );
 
     for segment in &ready {
-        assert!(!segment.samples.is_empty(), "segment phát ra phải có dữ liệu audio");
+        assert!(
+            !segment.samples.is_empty(),
+            "segment phát ra phải có dữ liệu audio"
+        );
         assert_eq!(segment.sample_rate, 16_000);
         assert!(segment.end_frame_index >= segment.start_frame_index);
     }
@@ -73,7 +84,9 @@ fn sau_khi_het_audio_push_frame_khong_phat_them_segment_trung() {
             samples: chunk.to_vec(),
             sample_rate,
         };
-        pipeline.push_frame(frame).expect("push_frame chạy thành công");
+        pipeline
+            .push_frame(frame)
+            .expect("push_frame chạy thành công");
     }
     let trailing_silence = AudioFrame {
         samples: vec![0.0; sample_rate as usize * 2],

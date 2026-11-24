@@ -168,7 +168,10 @@ mod tests {
         }
     }
 
-    fn collect_for(handle_builder: impl FnOnce(Box<dyn FnMut(AudioFrame) + Send>) -> StreamHandle, wait_ms: u64) -> Vec<f32> {
+    fn collect_for(
+        handle_builder: impl FnOnce(Box<dyn FnMut(AudioFrame) + Send>) -> StreamHandle,
+        wait_ms: u64,
+    ) -> Vec<f32> {
         let collected = Arc::new(Mutex::new(Vec::new()));
         let collected_cb = collected.clone();
         let handle = handle_builder(Box::new(move |frame| {
@@ -201,7 +204,9 @@ mod tests {
             samples: vec![0.3; 32],
             sample_rate: 16_000,
         });
-        let b = Box::new(SilentSource { sample_rate: 16_000 });
+        let b = Box::new(SilentSource {
+            sample_rate: 16_000,
+        });
         let mixer = MixedAudioSource::new(a, b);
         let out = collect_for(|cb| mixer.start(cb).expect("start"), 60);
         assert!(out.len() >= 32);
@@ -210,8 +215,12 @@ mod tests {
 
     #[test]
     fn stop_khong_panic_va_dung_nhan_mau_moi() {
-        let a = Box::new(SilentSource { sample_rate: 16_000 });
-        let b = Box::new(SilentSource { sample_rate: 16_000 });
+        let a = Box::new(SilentSource {
+            sample_rate: 16_000,
+        });
+        let b = Box::new(SilentSource {
+            sample_rate: 16_000,
+        });
         let mixer = MixedAudioSource::new(a, b);
         let handle = mixer.start(Box::new(|_frame| {})).expect("start");
         handle.stop();

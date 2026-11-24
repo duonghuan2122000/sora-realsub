@@ -63,7 +63,8 @@ fn closed_segment_count(labels: &[FrameLabel], total_segments: usize) -> usize {
     }
     let trailing_silence = labels.iter().rev().take_while(|l| !l.is_speech).count();
     let last_label_is_speech = labels.last().is_some_and(|l| l.is_speech);
-    let last_segment_is_open = last_label_is_speech || trailing_silence < DEFAULT_MIN_SILENCE_FRAMES;
+    let last_segment_is_open =
+        last_label_is_speech || trailing_silence < DEFAULT_MIN_SILENCE_FRAMES;
     if last_segment_is_open {
         total_segments - 1
     } else {
@@ -75,7 +76,10 @@ fn closed_segment_count(labels: &[FrameLabel], total_segments: usize) -> usize {
 fn slice_samples(resampled: &[f32], start_frame_index: usize, end_frame_index: usize) -> Vec<f32> {
     let start = start_frame_index * VAD_CHUNK_SIZE;
     let end = ((end_frame_index + 1) * VAD_CHUNK_SIZE).min(resampled.len());
-    resampled.get(start..end).map(|s| s.to_vec()).unwrap_or_default()
+    resampled
+        .get(start..end)
+        .map(|s| s.to_vec())
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -86,7 +90,10 @@ mod tests {
         pattern
             .iter()
             .enumerate()
-            .map(|(frame_index, &is_speech)| FrameLabel { frame_index, is_speech })
+            .map(|(frame_index, &is_speech)| FrameLabel {
+                frame_index,
+                is_speech,
+            })
             .collect()
     }
 

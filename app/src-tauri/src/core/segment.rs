@@ -103,14 +103,20 @@ mod tests {
 
         let segments = segment(&labels);
         assert_eq!(segments.len(), 2);
-        assert_eq!(segments[0], Segment {
-            start_frame_index: 0,
-            end_frame_index: 2,
-        });
-        assert_eq!(segments[1], Segment {
-            start_frame_index: 12,
-            end_frame_index: 14,
-        });
+        assert_eq!(
+            segments[0],
+            Segment {
+                start_frame_index: 0,
+                end_frame_index: 2,
+            }
+        );
+        assert_eq!(
+            segments[1],
+            Segment {
+                start_frame_index: 12,
+                end_frame_index: 14,
+            }
+        );
     }
 
     #[test]

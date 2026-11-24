@@ -24,7 +24,7 @@ pub use mic_audio_source::MicAudioSource;
 pub use mixed_audio_source::MixedAudioSource;
 pub use mixed_audio_source::resample_linear;
 pub use segment::{Segment, segment, segment_with_min_silence};
-pub use speech_to_text::SpeechToText;
+pub use speech_to_text::{SpeechToText, WhisperSpeechToText};
 pub use subtitle_sink::SubtitleSink;
 pub use translator::Translator;
 pub use types::{AudioFrame, StreamHandle, Subtitle, TranscriptChunk};
