@@ -11,3 +11,8 @@ Core = Rust (Tauri 2), UI = Vue 3 + TypeScript, giao tiếp qua Tauri IPC comman
 **Nguồn kiến thức dự án — đọc wiki trước:** wiki ở `wiki/` (bắt đầu từ `wiki/index.md`) là nguồn chính, đã tổng hợp và cross-reference sẵn — luôn đọc wiki trước khi cần hiểu lệnh dev, kiến trúc, pipeline, trait Core, quy ước style. `docs/` (`sora-realsub-overview.md`, `tech-stack.md`, `style-guide.md`) chỉ là tài liệu gốc để bổ trợ/đối chiếu khi wiki thiếu chi tiết.
 
 **Trạng thái hiện tại**: `app/` vẫn là skeleton mặc định của `create-tauri-app` — chưa có code pipeline audio/VAD/STT/dịch nào.
+
+## Quy tắc commit
+
+- Commit message theo chuẩn Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, ...), nội dung tiếng Việt có dấu.
+- **Không** thêm trailer `Co-Authored-By` vào commit message.
