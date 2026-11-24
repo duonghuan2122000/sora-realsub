@@ -25,6 +25,8 @@
 - [[PBI-6-capture-loopback-wasapi]] — capture loopback hệ thống qua crate `wasapi` (cpal không hỗ trợ loopback), test bằng ghi .wav (M1, 2026-11-24)
 - [[PBI-7-tron-mic-loopback]] — trộn mic + loopback thành 1 stream qua `MixedAudioSource` (buffer trung gian + thread trộn, resample linear), test bằng ghi .wav (M1, 2026-11-24)
 - [[PBI-8-start-stop-capture]] — lệnh `start_capture`/`stop_capture` qua Tauri IPC (`CaptureSessionState`), hoàn tất M1 (M1, 2026-11-24)
+- [[PBI-9-vad-silero]] — gán nhãn speech/silence theo frame qua Silero VAD v5 (crate `voice_activity_detector`), bắt đầu M2; SC-001/002/003 đã xác nhận bằng fixture giọng nói thật (M2, 2026-11-24)
+- [[PBI-10-cat-segment-khoang-lang]] — cắt luồng audio thành segment theo khoảng lặng (state machine silence-hangover, không thêm dependency), xác nhận bằng audio thật ghép 2 lượt nói (M2, 2026-11-24)
 
 ## Trạng thái code hiện tại
-- [[Trang-thai-ma-nguon]] — snapshot app/ (2026-11-24, cập nhật sau PBI 8): M1 (Audio Capture) hoàn tất 5/5 — liệt kê thiết bị, capture mic, capture loopback, trộn mic+loopback, start/stop IPC; interface Core (PBI 3) vẫn chưa có cài đặt VAD/STT/dịch
+- [[Trang-thai-ma-nguon]] — snapshot app/ (2026-11-24, cập nhật sau PBI 10): M1 (Audio Capture) hoàn tất 5/5; M2 (VAD): 2/3 mục xong (gán nhãn speech/silence, cắt segment theo khoảng lặng), còn thiếu event `vad-segment` ra UI; interface Core (PBI 3) vẫn chưa có cài đặt STT/dịch

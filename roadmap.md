@@ -21,8 +21,8 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 
 ## M2 — VAD (Voice Activity Detection)
 
-- [ ] Tích hợp model VAD (Silero VAD) đọc buffer audio, trả nhãn speech/silence cho từng frame
-- [ ] Cắt audio liên tục thành các đoạn (segment) theo khoảng lặng, test với file mẫu có nói + lặng xen kẽ
+- [x] Tích hợp model VAD (Silero VAD) đọc buffer audio, trả nhãn speech/silence cho từng frame
+- [x] Cắt audio liên tục thành các đoạn (segment) theo khoảng lặng, test với file mẫu có nói + lặng xen kẽ
 - [ ] Expose event Tauri `vad-segment` phát mỗi khi có đoạn mới, test UI nhận được event
 
 ## M3 — STT streaming (khung cloud, dễ làm trước)

@@ -5,7 +5,7 @@ tags: [status]
 sources: [app/]
 ---
 
-# Trạng thái mã nguồn — snapshot 2026-11-24 (cập nhật sau PBI 8)
+# Trạng thái mã nguồn — snapshot 2026-11-24 (cập nhật sau PBI 10)
 
 Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ngày trên; ingest lại khi code có tiến triển mới.
 
@@ -17,7 +17,9 @@ Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ng�
 - **Mới (PBI 6)**: `core/loopback_audio_source.rs` — `LoopbackAudioSource`, cài đặt thứ hai của trait `AudioSource` (capture loopback từ thiết bị output mặc định qua crate **`wasapi`**, vì `cpal` không hỗ trợ loopback; stream giữ trên thread riêng cùng pattern với mic). Bin thủ công `src/bin/capture_loopback_to_wav.rs` ghi `.wav`. Dependency mới: `wasapi = "0.26"`. 16/16 test pass, clippy sạch. Chi tiết: [[PBI-6-capture-loopback-wasapi]].
 - **Mới (PBI 7)**: `core/mixed_audio_source.rs` — `MixedAudioSource`, trộn 2 `AudioSource` con (mic + loopback) thành 1 stream bằng buffer trung gian + thread trộn chu kỳ 15ms (cộng mẫu + clamp), resample linear khi sample rate khác nhau. Không thêm dependency. Bin thủ công `src/bin/capture_mixed_to_wav.rs`. 21/21 test pass, clippy sạch. Chi tiết: [[PBI-7-tron-mic-loopback]].
 - **Mới (PBI 8)**: `core/capture_session.rs` — `CaptureSessionState`, quản lý 1 phiên thu âm duy nhất (`Mutex<Option<StreamHandle>>`), expose qua Tauri command `start_capture`/`stop_capture` trong `lib.rs` (dùng `MixedAudioSource` từ PBI 7). Thêm 2 lỗi `CoreError::AlreadyRunning`/`NotRunning`. Không thêm dependency. 26/26 test pass; kiểm thử tay qua UI thật (quickstart.md) chưa chạy do môi trường không có GUI — xem [[PBI-8-start-stop-capture]]. **M1 (Audio Capture) hoàn tất.**
-- **Vẫn chưa có**: chọn thiết bị output cụ thể cho loopback, VAD, STT, dịch, lưu trữ thật trong [[Pipeline-xu-ly-audio]]. Chưa thấy `rubato`, `ort`, `whisper-rs`, `rusqlite` trong Cargo deps.
+- **Mới (PBI 9)**: `core/vad.rs` — `detect()`/`detect_with_threshold()` chia buffer frame 512 sample @16kHz, gán nhãn speech/silence qua crate `voice_activity_detector` (Silero VAD v5). Tái dùng `resample_linear` từ `mixed_audio_source.rs` (đổi `pub(super)`). Dependency mới: `voice_activity_detector = "0.2"`. Test tích hợp `tests/vad_real_speech.rs` dùng fixture giọng nói thật `tests/fixtures/vad_sample.wav` (copy từ `capture_mic_to_wav_output.wav`, 8s im lặng-nói-im lặng) xác nhận SC-001/003 bằng đối chiếu RMS năng lượng. 31/31 test pass (30 unit + 1 fixture thật), clippy sạch. Chưa nối vào pipeline streaming, chưa có Tauri command/event. Xem [[PBI-9-vad-silero]].
+- **Mới (PBI 10)**: `core/segment.rs` — `segment()`/`segment_with_min_silence()`, state machine silence-hangover cắt `Vec<FrameLabel>` (từ `vad::detect`, PBI 9) thành `Vec<Segment>` theo lượt nói, ngưỡng mặc định `DEFAULT_MIN_SILENCE_FRAMES = 9` (~300ms). Không thêm dependency. Test tích hợp `tests/segment_real_speech.rs` ghép 2 lần audio thật `vad_sample.wav` với khoảng lặng 2s chèn giữa, xác nhận đúng 2 segment. 7/7 test pass (6 unit + 1 fixture thật), clippy sạch. Chưa nối vào pipeline streaming, chưa có Tauri event. Xem [[PBI-10-cat-segment-khoang-lang]].
+- **Vẫn chưa có**: chọn thiết bị output cụ thể cho loopback, event `vad-segment` phát segment ra UI, STT, dịch, lưu trữ thật trong [[Pipeline-xu-ly-audio]]. Chưa thấy `rubato`, `whisper-rs`, `rusqlite` trong Cargo deps.
 
 ## app/src (UI Vue)
 - `App.vue`, `main.ts`, `vite-env.d.ts`, `sample.test.ts` — skeleton Vite+Vue 3 mặc định.
@@ -26,7 +28,7 @@ Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ng�
 - **PBI 5, PBI 6, PBI 7, PBI 8 không đụng UI** — chỉ thi công phần lõi Rust capture + điều khiển phiên (mic, loopback, trộn, start/stop), command Tauri đã có nhưng chưa có nút bấm trong Vue.
 
 ## Kết luận
-M1 (Audio Capture) đã hoàn tất 5/5 mục: liệt kê thiết bị mic (PBI 4), capture mic thành PCM (PBI 5), capture loopback hệ thống thành PCM (PBI 6), trộn mic+loopback thành 1 stream (PBI 7), lệnh `start_capture`/`stop_capture` qua IPC (PBI 8) — cả năm chạy trên nền interface Core đã chốt ở PBI 3. Tiếp theo: M2 (VAD).
+M1 (Audio Capture) đã hoàn tất 5/5 mục (PBI 4-8). M2 (VAD) 2/3 mục xong: gán nhãn speech/silence theo frame qua Silero VAD (PBI 9) và cắt segment theo khoảng lặng (PBI 10) — cả hai đã xác minh bằng dữ liệu giọng nói thật. Chưa phát event `vad-segment` ra UI (1 mục còn lại của M2).
 
 ## Liên quan
-[[Core-Rust]], [[UI-Vue]], [[Style-guide-token]], [[Quyet-dinh-hop-dong-core]], [[PBI-4-liet-ke-thiet-bi-mic]], [[PBI-5-capture-mic-pcm]], [[PBI-6-capture-loopback-wasapi]], [[PBI-7-tron-mic-loopback]], [[PBI-8-start-stop-capture]]
+[[Core-Rust]], [[UI-Vue]], [[Style-guide-token]], [[Quyet-dinh-hop-dong-core]], [[PBI-4-liet-ke-thiet-bi-mic]], [[PBI-5-capture-mic-pcm]], [[PBI-6-capture-loopback-wasapi]], [[PBI-7-tron-mic-loopback]], [[PBI-8-start-stop-capture]], [[PBI-9-vad-silero]], [[PBI-10-cat-segment-khoang-lang]]
