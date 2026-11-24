@@ -23,7 +23,7 @@ impl MixedAudioSource {
 }
 
 /// Resample đơn giản (linear interpolation) để quy 1 khối mẫu về `target_rate`.
-fn resample_linear(samples: &[f32], from_rate: u32, to_rate: u32) -> Vec<f32> {
+pub fn resample_linear(samples: &[f32], from_rate: u32, to_rate: u32) -> Vec<f32> {
     if from_rate == to_rate || samples.is_empty() {
         return samples.to_vec();
     }

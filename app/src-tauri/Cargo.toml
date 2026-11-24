@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2024"
+default-run = "app"
 
 [lints.clippy]
 all = "warn"
@@ -32,6 +33,7 @@ thiserror = "2"
 cpal = "0.15"
 hound = "3"
 wasapi = "0.26"
+voice_activity_detector = "0.2"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt"] }
