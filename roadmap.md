@@ -34,7 +34,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 
 ## M4 — Dịch (Translation)
 
-- [ ] Implement `Translator` cho 1 provider (Azure Translator hoặc LLM API), test dịch 1 câu cố định ra kết quả đúng
+- [ ] Implement `Translator` bằng model local (NLLB hoặc tương đương, chạy offline), test dịch 1 câu cố định ra kết quả đúng
 - [ ] Ghép ngữ cảnh: gửi kèm 1-2 câu trước khi dịch câu hiện tại, test câu có đại từ/thiếu ngữ cảnh dịch đúng hơn khi có context
 - [ ] Nối STT final → Translator → event `subtitle-ready` (text gốc + text dịch), test end-to-end
 
@@ -68,7 +68,6 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 
 ## Backlog (chưa ưu tiên, cần quyết định thêm)
 
-- [ ] Dịch local/offline (NLLB) thay thế M4 khi cần riêng tư
 - [ ] Hỗ trợ macOS (BlackHole/ScreenCaptureKit cho loopback)
 - [ ] Đa ngôn ngữ UI (i18n)
 - [ ] Theme/style tùy biến cửa sổ phụ đề theo style-guide token
