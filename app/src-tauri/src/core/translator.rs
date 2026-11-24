@@ -8,24 +8,27 @@ pub trait Translator: Send + Sync {
     async fn translate(&self, text: &str, context: &[String]) -> Result<String, CoreError>;
 }
 
-/// Mã ngôn ngữ FLORES-200 (NLLB) cho cặp ngôn ngữ mặc định đã chốt ở M0 (English → Vietnamese).
-const SOURCE_LANG: &str = "eng_Latn";
-const TARGET_LANG: &str = "vie_Latn";
+/// Cặp ngôn ngữ mặc định đã chốt ở M0 (English → Vietnamese). Model Marian-MT hiện dùng
+/// (opus-mt-en-vi) là model 1 cặp ngôn ngữ cố định nên sidecar không thực sự dùng 2 mã này để
+/// chọn hướng dịch, nhưng vẫn truyền qua CLI để hợp đồng sidecar tổng quát cho model khác sau
+/// này (ví dụ NLLB, cần mã ngôn ngữ FLORES-200 dạng "eng_Latn"/"vie_Latn").
+const SOURCE_LANG: &str = "en";
+const TARGET_LANG: &str = "vi";
 
-/// Cài đặt `Translator` bằng model dịch local (NLLB-200 hoặc tương đương), chạy qua một
-/// **tiến trình ngoài (sidecar)** thay vì binding native in-process — tránh xung đột linker
-/// CRT tĩnh/động giữa thư viện binding dịch và `ort` (onnxruntime) đang dùng cho VAD
-/// (xem research.md PBI 16, mục "Cập nhật quyết định").
+/// Cài đặt `Translator` bằng model dịch local open-source (Marian-MT, Apache-2.0 — xem
+/// research.md PBI 16), chạy qua một **tiến trình ngoài (sidecar)** thay vì binding native
+/// in-process — tránh xung đột linker CRT tĩnh/động giữa thư viện binding dịch và `ort`
+/// (onnxruntime) đang dùng cho VAD.
 ///
 /// `executable_path` là đường dẫn tới chương trình dịch cục bộ (CLI), `model_dir` là thư mục
 /// chứa model đã nạp sẵn cho sidecar đó. Không gọi tiến trình khi khởi tạo — chỉ lưu đường dẫn;
 /// lỗi (thiếu executable, model lỗi) chỉ phát hiện khi gọi `translate()` (FR-002).
-pub struct NllbTranslator {
+pub struct SidecarTranslator {
     executable_path: String,
     model_dir: String,
 }
 
-impl NllbTranslator {
+impl SidecarTranslator {
     pub fn new(executable_path: &str, model_dir: &str) -> Result<Self, CoreError> {
         Ok(Self {
             executable_path: executable_path.to_string(),
@@ -35,7 +38,7 @@ impl NllbTranslator {
 }
 
 #[async_trait]
-impl Translator for NllbTranslator {
+impl Translator for SidecarTranslator {
     async fn translate(&self, text: &str, _context: &[String]) -> Result<String, CoreError> {
         if text.trim().is_empty() {
             return Ok(String::new());
@@ -104,7 +107,7 @@ mod tests {
     // PBI 16 — T005: sidecar executable không tồn tại phải trả lỗi rõ ràng, không panic.
     #[tokio::test]
     async fn sidecar_khong_ton_tai_tra_loi() {
-        let translator = NllbTranslator::new("duong-dan-khong-ton-tai.exe", "model-dir").unwrap();
+        let translator = SidecarTranslator::new("duong-dan-khong-ton-tai.exe", "model-dir").unwrap();
         let result = translator.translate("Hello", &[]).await;
         match result {
             Err(CoreError::Provider(msg)) => assert!(!msg.is_empty()),
@@ -118,7 +121,7 @@ mod tests {
     async fn input_rong_tra_ve_rong_khong_spawn_tien_trinh() {
         // Dùng executable chắc chắn không tồn tại — nếu input rỗng mà vẫn trả Ok("") thì
         // chứng minh translate() đã return sớm, không thử spawn (FR-003).
-        let translator = NllbTranslator::new("duong-dan-khong-ton-tai.exe", "model-dir").unwrap();
+        let translator = SidecarTranslator::new("duong-dan-khong-ton-tai.exe", "model-dir").unwrap();
         assert_eq!(translator.translate("", &[]).await.unwrap(), "");
         assert_eq!(translator.translate("   ", &[]).await.unwrap(), "");
     }
@@ -127,21 +130,22 @@ mod tests {
     // (xem quickstart.md). Đánh dấu #[ignore] vì sidecar/model không commit vào repo; chạy thủ
     // công bằng `cargo test -p app translator -- --ignored` khi đã có sẵn trên máy dev.
     #[tokio::test]
-    #[ignore = "cần sidecar dịch + model NLLB (hoặc tương đương) cục bộ — xem quickstart.md"]
+    #[ignore = "cần sidecar dịch + model local open-source (Marian-MT opus-mt-en-vi) cục bộ — xem quickstart.md"]
     async fn dich_cau_co_dinh_dung_nghia_va_on_dinh() {
         let executable_path = std::env::var("SORA_TRANSLATE_SIDECAR_PATH")
             .expect("đặt SORA_TRANSLATE_SIDECAR_PATH tới executable dịch cục bộ");
-        let model_dir = std::env::var("SORA_NLLB_MODEL_PATH")
-            .expect("đặt SORA_NLLB_MODEL_PATH tới thư mục model NLLB cục bộ");
-        let translator = NllbTranslator::new(&executable_path, &model_dir).unwrap();
+        let model_dir = std::env::var("SORA_TRANSLATE_MODEL_PATH")
+            .expect("đặt SORA_TRANSLATE_MODEL_PATH tới thư mục model dịch cục bộ");
+        let translator = SidecarTranslator::new(&executable_path, &model_dir).unwrap();
 
         let first = translator
             .translate("Hello, how are you?", &[])
             .await
             .expect("dịch lần 1 thất bại");
-        // Bản dịch tham chiếu lấy từ chạy thật sidecar (model JustFrederik/nllb-200-distilled-600M-ct2-int8,
-        // xem quickstart.md) — không phải câu "chuẩn" duy nhất, chỉ cần khớp đúng model/sidecar đang dùng.
-        assert_eq!(first, "Chào, anh thế nào?");
+        // Bản dịch tham chiếu lấy từ chạy thật sidecar (model gaudi/opus-mt-en-vi-ctranslate2,
+        // Apache-2.0, xem quickstart.md) — không phải câu "chuẩn" duy nhất, chỉ cần khớp đúng
+        // model/sidecar đang dùng.
+        assert_eq!(first, "Xin chào, anh khỏe không?");
 
         let second = translator
             .translate("Hello, how are you?", &[])

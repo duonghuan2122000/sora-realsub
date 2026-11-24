@@ -9,7 +9,12 @@ use std::process::ExitCode;
 
 struct Args {
     model_dir: String,
+    // Model Marian-MT (opus-mt-en-vi) là model 1 cặp ngôn ngữ cố định, không cần mã ngôn ngữ
+    // FLORES-200 như NLLB — giữ 2 flag này chỉ để tương thích CLI với NllbTranslator (gọi
+    // sidecar), không dùng tới giá trị.
+    #[allow(dead_code)]
     source_lang: String,
+    #[allow(dead_code)]
     target_lang: String,
     text: String,
 }
@@ -59,12 +64,10 @@ fn main() -> ExitCode {
         }
     };
 
-    let source_prefix = vec![vec![args.source_lang.as_str()]];
-    let target_prefix = vec![vec![args.target_lang.as_str()]];
-    let results = match translator.translate_batch_with_source_and_target_prefix(
+    // Marian-MT (opus-mt-en-vi) là model 1 cặp ngôn ngữ cố định — không cần source/target
+    // prefix token như NLLB, gọi translate_batch thường.
+    let results = match translator.translate_batch(
         &[args.text.as_str()],
-        &source_prefix,
-        &target_prefix,
         &TranslationOptions::default(),
         None,
     ) {
@@ -80,12 +83,6 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     };
 
-    // NLLB trả kèm token ngôn ngữ đích ở đầu câu (ví dụ "vie_Latn"), bỏ đi trước khi in.
-    let translated = translated
-        .strip_prefix(args.target_lang.as_str())
-        .unwrap_or(&translated)
-        .trim();
-
-    println!("{translated}");
+    println!("{}", translated.trim());
     ExitCode::SUCCESS
 }

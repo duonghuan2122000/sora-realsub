@@ -43,3 +43,12 @@ Không còn — đã chốt ở M0 cặp ngôn ngữ mặc định (English → 
 - Sidecar process: rủi ro thấp nhất, không đổi gì ở M2 — **chọn phương án này**.
 
 **Ràng buộc hệ quả**: Việc đóng gói app cuối (M8) sẽ cần kèm theo executable sidecar này (ngoài scope PBI 16). Trong PBI 16, implementation chỉ cần gọi đúng executable qua đường dẫn cấu hình (giống cách gọi model file ở STT) — việc build/đóng gói executable sidecar thật không thuộc phạm vi PBI này (xem "Ngoài phạm vi" ở spec.md, bổ sung ghi chú này).
+
+## Cập nhật tiếp theo (2026-11-24) — đã dựng sidecar thật, rồi đổi sang model open-source
+
+Thực tế đã dựng `app/translate-sidecar/` (crate riêng, dùng `ct2rs`) và xác nhận chạy được:
+- Phát hiện thêm: `ct2rs` default feature `sentencepiece` (trong `all-tokenizers`) tự xung đột CRT NGAY TRONG NỘI BỘ nó (không cần `ort`) — `sentencepiece-sys` build `/MD`, `ct2rs-sys` build `/MT`. `RUSTFLAGS=-C target-feature=+crt-static` **giải quyết được** trường hợp này (khác với trường hợp `ort` — vì ở đây không có object nhị phân dựng sẵn cố định CRT nào, mọi thứ build lại từ source theo flag).
+- Lần đầu dùng model `JustFrederik/nllb-200-distilled-600M-ct2-int8` (NLLB-200, feature `ct2rs` = `tokenizers`+`ruy`, không dùng `sentencepiece`) — chạy được, SC-001/FR-004 pass. Nhưng model này license `cc-by-nc-4.0` (non-commercial).
+- **Theo yêu cầu người dùng đổi sang model open-source**: đổi sang `gaudi/opus-mt-en-vi-ctranslate2` (Marian-MT, chuyển đổi CTranslate2 của `Helsinki-NLP/opus-mt-en-vi`, **license Apache-2.0**). Model này dùng `source.spm`/`target.spm` (sentencepiece thô) → đổi feature `ct2rs` sang `sentencepiece`+`ruy`, xác nhận `RUSTFLAGS=-C target-feature=+crt-static` cũng fix được xung đột CRT của `sentencepiece-sys`. Marian-MT là model 1 cặp ngôn ngữ cố định, không cần source/target prefix token như NLLB — đổi cách gọi `translate_batch_with_source_and_target_prefix` → `translate_batch` thường.
+- Đổi tên `NllbTranslator` → `SidecarTranslator` trong `core/translator.rs` vì tên cũ không còn phản ánh đúng model đang dùng.
+- **Kết luận**: kiến trúc sidecar (crate riêng, build với `crt-static`) hoạt động tốt với cả 2 họ model (NLLB và Marian-MT), không phụ thuộc vào model cụ thể. Chọn model nào (NLLB chất lượng cao hơn nhưng non-commercial, hay Marian nhẹ hơn và Apache-2.0) là quyết định sản phẩm, không phải giới hạn kỹ thuật.

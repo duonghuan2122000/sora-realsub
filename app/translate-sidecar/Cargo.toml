@@ -9,10 +9,10 @@ name = "translate-sidecar"
 path = "src/main.rs"
 
 [dependencies]
-# Chỉ dùng feature "tokenizers" (đọc tokenizer.json bằng crate `tokenizers`, pure Rust) —
-# KHÔNG dùng "sentencepiece" (binding native, build.rs cũng force CRT tĩnh như ct2rs-sys,
-# xung đột ngay trong nội bộ ct2rs khi link, không liên quan gì đến `ort`).
-ct2rs = { version = "0.11", default-features = false, features = ["tokenizers", "ruy"] }
+# Model Marian-MT (opus-mt-en-vi, Apache-2.0) dùng source.spm/target.spm → cần feature
+# "sentencepiece". PHẢI build với RUSTFLAGS="-C target-feature=+crt-static" (xem README/wiki
+# PBI-16) để tránh xung đột CRT nội bộ giữa sentencepiece-sys (/MD mặc định) và ct2rs-sys (/MT).
+ct2rs = { version = "0.11", default-features = false, features = ["sentencepiece", "ruy"] }
 
 [profile.release]
 opt-level = 3

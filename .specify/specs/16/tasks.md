@@ -64,3 +64,13 @@ Chưa quay lại `/sora-task 16`/`/sora-implement 16` cho đến khi chọn hư�
 - Model thật: `JustFrederik/nllb-200-distilled-600M-ct2-int8` (Hugging Face, ~647MB, license `cc-by-nc-4.0` — non-commercial, cần đổi model trước khi phát hành thương mại).
 - Chạy `cargo test --lib core::translator -- --include-ignored` với `SORA_TRANSLATE_SIDECAR_PATH`/`SORA_NLLB_MODEL_PATH` trỏ tới sidecar/model thật: **5/5 test pass**, bao gồm T007 (dịch đúng + ổn định, SC-001 + FR-004 xác nhận bằng dữ liệu thật).
 - `app/translate-sidecar/` không commit `target/`, model không commit (quá lớn, không thuộc repo) — xem `quickstart.md` để build lại từ đầu.
+
+## Cập nhật — đổi sang model open-source (2026-11-24, theo yêu cầu người dùng)
+
+Model `JustFrederik/nllb-200-distilled-600M-ct2-int8` ở trên license `cc-by-nc-4.0` (non-commercial) — người dùng yêu cầu đổi sang model open-source để không bị ràng buộc này. Đã đổi sang **`gaudi/opus-mt-en-vi-ctranslate2`** (Marian-MT, Apache-2.0, ~148MB, nhỏ hơn NLLB-200 nhiều).
+
+Thay đổi kỹ thuật kèm theo (không đổi kiến trúc sidecar, chỉ đổi phần dùng `ct2rs`):
+- `app/translate-sidecar/Cargo.toml`: feature `ct2rs` đổi từ `["tokenizers", "ruy"]` sang `["sentencepiece", "ruy"]` — model này dùng `source.spm`/`target.spm` (sentencepiece thô) thay vì `tokenizer.json`.
+- `app/translate-sidecar/src/main.rs`: bỏ `translate_batch_with_source_and_target_prefix` (mã ngôn ngữ FLORES-200 kiểu NLLB), dùng `translate_batch` thường — Marian-MT là model 1 cặp ngôn ngữ cố định, không cần prefix token. Vẫn giữ flag `--source-lang`/`--target-lang` trên CLI cho đồng bộ hợp đồng gọi, chỉ không dùng giá trị.
+- `app/src-tauri/src/core/translator.rs`: đổi tên `NllbTranslator` → `SidecarTranslator` (tên cũ sai vì không còn là NLLB); biến môi trường test đổi `SORA_NLLB_MODEL_PATH` → `SORA_TRANSLATE_MODEL_PATH`; cập nhật bản dịch tham chiếu trong test thật.
+- Xác nhận lại: build với `RUSTFLAGS="-C target-feature=+crt-static"` vẫn cần (fix xung đột CRT nội bộ `sentencepiece-sys` vs `ct2rs-sys`, độc lập với model nào) — 5/5 test pass với model mới.
