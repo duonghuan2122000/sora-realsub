@@ -34,7 +34,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 
 ## M4 — Dịch (Translation)
 
-- [ ] Implement `Translator` bằng model local (NLLB hoặc tương đương, chạy offline), test dịch 1 câu cố định ra kết quả đúng (PBI 16: `NllbTranslator` cài xong, chạy qua sidecar process do xung đột CRT với `ct2rs`; test lỗi/input rỗng pass, nhưng test dịch câu cố định SC-001 còn `#[ignore]` — chưa có sidecar+model thật để xác nhận, nên CHƯA tick dòng này)
+- [x] Implement `Translator` bằng model local (NLLB hoặc tương đương, chạy offline), test dịch 1 câu cố định ra kết quả đúng (PBI 16: `NllbTranslator` chạy qua sidecar process riêng `app/translate-sidecar/` (crate Cargo độc lập, dùng `ct2rs`) để tránh xung đột CRT với `ort`; đã build sidecar thật + tải model `JustFrederik/nllb-200-distilled-600M-ct2-int8` (license cc-by-nc-4.0, cần đổi trước khi thương mại hoá), xác nhận SC-001 + FR-004 bằng dữ liệu thật, 5/5 test pass)
 - [ ] Ghép ngữ cảnh: gửi kèm 1-2 câu trước khi dịch câu hiện tại, test câu có đại từ/thiếu ngữ cảnh dịch đúng hơn khi có context
 - [ ] Nối STT final → Translator → event `subtitle-ready` (text gốc + text dịch), test end-to-end
 
