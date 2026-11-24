@@ -25,12 +25,12 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 - [x] Cắt audio liên tục thành các đoạn (segment) theo khoảng lặng, test với file mẫu có nói + lặng xen kẽ
 - [x] Expose event Tauri `vad-segment` phát mỗi khi có đoạn mới, test UI nhận được event (PBI 11; UI nhận được event xác nhận bằng test tích hợp audio thật `vad_pipeline_real_speech.rs`, chưa kiểm thử tay trên UI/mic thật)
 
-## M3 — STT streaming (khung cloud, dễ làm trước)
+## M3 — STT streaming (local)
 
-- [ ] Implement `SpeechToText` cho 1 provider cloud (Azure/Deepgram), test gửi file audio mẫu → nhận text đúng
+- [ ] Implement `SpeechToText` bằng model local (whisper.cpp hoặc faster-whisper), test gửi file audio mẫu → nhận text đúng
 - [ ] Ghép STT vào luồng: segment từ VAD → gửi STT → nhận text, test end-to-end với audio mẫu
 - [ ] Event Tauri `transcript-partial` (text tạm, có thể sửa) và `transcript-final` (text chốt), test UI nhận đúng thứ tự
-- [ ] Xử lý lỗi mạng/API (retry, thông báo), test giả lập mất kết nối giữa chừng
+- [ ] Xử lý lỗi runtime model (thiếu model file, lỗi load/infer, thông báo), test giả lập các case lỗi trên
 
 ## M4 — Dịch (Translation)
 
@@ -68,7 +68,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 
 ## Backlog (chưa ưu tiên, cần quyết định thêm)
 
-- [ ] Hướng local/offline: whisper.cpp/faster-whisper + NLLB (thay thế M3/M4 khi cần riêng tư)
+- [ ] Dịch local/offline (NLLB) thay thế M4 khi cần riêng tư
 - [ ] Hỗ trợ macOS (BlackHole/ScreenCaptureKit cho loopback)
 - [ ] Đa ngôn ngữ UI (i18n)
 - [ ] Theme/style tùy biến cửa sổ phụ đề theo style-guide token
