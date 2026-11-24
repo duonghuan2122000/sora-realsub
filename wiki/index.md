@@ -13,7 +13,8 @@
 - [[Style-guide-token]] — design token, BEM `sora-*`, quy ước class trạng thái
 
 ## Decisions
-- [[Cau-hoi-con-mo]] — OS mục tiêu, cặp ngôn ngữ, cloud vs local chưa chốt
+- [[Cau-hoi-con-mo]] — cặp ngôn ngữ, cloud vs local chưa chốt
+- [[Quyet-dinh-OS-muc-tieu]] — Windows trước, macOS Backlog (PBI 1, đã chốt)
 - [[Rui-ro-ky-thuat]] — độ trễ, khởi động, chi phí GPU, riêng tư
 
 ## Trạng thái code hiện tại

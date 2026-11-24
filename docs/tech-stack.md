@@ -78,6 +78,8 @@ Thiết kế core theo trait để thay engine dễ dàng:
 
 Giữ phần đặc thù OS sau trait `AudioSource` và module `platform/` để mở rộng sau này không phải sửa pipeline.
 
+**Quyết định (PBI 1)**: Windows là OS mục tiêu đầu tiên — đối tượng dùng chính (họp/stream công ty) phổ biến Windows, và WASAPI loopback là API sẵn có, ổn định, không cần driver phụ như macOS (BlackHole). macOS triển khai sau, nằm ở Backlog, không block các milestone M1–M8.
+
 ## Đóng gói và phân phối
 
 - Tauri bundler: MSI/NSIS cho Windows.
