@@ -32,7 +32,7 @@
 - [[PBI-13-ghep-stt-vao-luong]] — `TranscriptPipeline` nối `VadPipeline` + `SpeechToText` thành luồng end-to-end trên file audio mẫu, giữ đúng thứ tự thời gian (M3, 2026-11-24)
 - [[PBI-14-transcript-partial-final-event]] — nối `TranscriptPipeline` thật vào `start_capture`, phát event Tauri `transcript-partial`/`transcript-final` ra UI theo đúng thứ tự (M3, 2026-11-24)
 - [[PBI-15-xu-ly-loi-runtime-model-stt]] — phát event Tauri `model-error` (loại `load`/`infer`) khi model STT lỗi nạp hoặc lỗi infer 1 segment, lỗi 1 segment không làm dừng pipeline, hoàn tất M3 (M3, 2026-11-24)
-- [[PBI-16-dich-local-sidecar]] — cài `NllbTranslator` cho trait `Translator`, bắt đầu M4; đổi từ binding native (`ct2rs`) sang **sidecar process** (crate riêng `app/translate-sidecar/`) do xung đột CRT với `ort` (VAD) — xem [[Rui-ro-ky-thuat]]; SC-001 đã xác nhận bằng sidecar + model NLLB-200 int8 thật, roadmap đã tick (M4, 2026-11-24)
+- [[PBI-16-dich-local-sidecar]] — cài `SidecarTranslator` (đổi tên từ `NllbTranslator`) cho trait `Translator`, bắt đầu M4; đổi từ binding native in-process sang **sidecar process** (crate riêng `app/translate-sidecar/`) do xung đột CRT với `ort` (VAD) — xem [[Rui-ro-ky-thuat]]; SC-001 đã xác nhận bằng sidecar + model Marian-MT `opus-mt-en-vi` (Apache-2.0, open-source — đổi từ NLLB-200 non-commercial theo yêu cầu người dùng), roadmap đã tick (M4, 2026-11-24)
 
 ## Trạng thái code hiện tại
 - [[Trang-thai-ma-nguon]] — snapshot app/ (2026-11-24, cập nhật sau PBI 16 phần 2): M1 hoàn tất 5/5; M2 hoàn tất 3/3; M3 hoàn tất 4/4; **M4 (Dịch) 1/3, SC-001 đã xác nhận bằng model thật**

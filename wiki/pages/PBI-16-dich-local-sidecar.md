@@ -2,7 +2,7 @@
 title: "PBI 16: Dịch local offline (sidecar process)"
 date: 2026-11-24
 tags: [pbi, m4, feature, blocker]
-sources: [.specify/specs/16/spec.md, .specify/specs/16/research.md, .specify/specs/16/plan.md, .specify/specs/16/tasks.md, .specify/specs/16/quickstart.md, .specify/specs/16/evidence, app/src-tauri/src/core/translator.rs, app/src-tauri/Cargo.toml]
+sources: [.specify/specs/16/spec.md, .specify/specs/16/research.md, .specify/specs/16/plan.md, .specify/specs/16/tasks.md, .specify/specs/16/quickstart.md, .specify/specs/16/evidence, app/src-tauri/src/core/translator.rs, app/translate-sidecar/]
 ---
 
 # PBI 16: Dịch local offline (sidecar process)
@@ -26,14 +26,14 @@ Tính năng đầu của M4. Trước PBI này, trait `Translator` (từ PBI 3) 
 
 **→ Bài học cho các PBI sau (M4 tiếp, hoặc bất kỳ ai định thêm binding C++ native khác)**: bất kỳ crate nào ép CRT tĩnh trên Windows MSVC (`static_crt(true)` trong `build.rs` của nó, thường gặp ở các binding ML C++ dùng `cmake` crate) sẽ **không thể cùng tồn tại** với `ort`/`voice_activity_detector` đã có trong `app_lib`. Kiểm tra điều này TRƯỚC khi chọn crate, không chỉ dựa vào `cargo check` (không link) — phải thử `cargo test`/`cargo build` thật.
 
-**Quyết định cuối (research.md v2, đã áp dụng)**: Không chạy model dịch in-process nữa. `NllbTranslator` (giữ tên, implement trait `Translator`) spawn một **sidecar executable ngoài** qua `std::process::Command` (stdlib, không thêm Cargo dependency nào) — cô lập hoàn toàn khỏi `app_lib`, không còn rủi ro xung đột CRT dù sidecar bên trong dùng công nghệ gì (CTranslate2, ONNX, Python...).
+**Quyết định cuối (research.md v2, đã áp dụng)**: Không chạy model dịch in-process nữa. `SidecarTranslator` (ban đầu đặt tên `NllbTranslator`, đổi tên ở phần 3 sau khi đổi model) implement trait `Translator`, spawn một **sidecar executable ngoài** qua `std::process::Command` (stdlib, không thêm Cargo dependency nào) — cô lập hoàn toàn khỏi `app_lib`, không còn rủi ro xung đột CRT dù sidecar bên trong dùng công nghệ gì (CTranslate2, ONNX, Python...).
 
 Phương án khác đã xem xét và loại: `candle` + `candle-transformers::models::marian` (pure Rust, không NLLB nhưng có Marian-MT "tương đương") — loại vì models Marian/opus-mt cần tokenizer SentencePiece, và crate `sentencepiece` (binding) từng xuất hiện cùng kiểu lỗi static-CRT trong log thử nghiệm → rủi ro lặp lại blocker, không chắc an toàn hơn. Gỡ `ort`/đổi VAD — loại vì ảnh hưởng ngược M2 đã hoàn tất.
 
 ## Cài đặt (code)
-- `core/translator.rs`: `NllbTranslator { executable_path: String, model_dir: String }`. `new()` chỉ lưu đường dẫn, không spawn ngay. `translate()`:
+- `core/translator.rs`: `SidecarTranslator { executable_path: String, model_dir: String }`. `new()` chỉ lưu đường dẫn, không spawn ngay. `translate()`:
   - input rỗng/khoảng trắng → `Ok(String::new())` ngay, không spawn (FR-003).
-  - spawn `Command::new(executable_path)` với args `--model-dir`, `--source-lang eng_Latn`, `--target-lang vie_Latn`, `--text <câu>` (mã FLORES-200, cặp mặc định đã chốt ở [[Quyet-dinh-ngon-ngu-mac-dinh]]).
+  - spawn `Command::new(executable_path)` với args `--model-dir`, `--source-lang`, `--target-lang`, `--text <câu>` (cặp mặc định English→Vietnamese đã chốt ở [[Quyet-dinh-ngon-ngu-mac-dinh]]; giá trị cụ thể của 2 mã ngôn ngữ phụ thuộc model sidecar đang chạy — xem phần 3).
   - spawn lỗi hoặc exit code ≠ 0 → `CoreError::Provider` (FR-002), không panic.
   - thành công → `stdout` trim làm kết quả.
 - **Không thêm Cargo dependency nào** (đã thử `ct2rs` rồi revert sạch — xem lịch sử ở `.specify/specs/16/tasks.md` mục "Ghi chú chặn thi công").
@@ -49,16 +49,26 @@ Phương án khác đã xem xét và loại: `candle` + `candle-transformers::mo
   1. `ct2rs = { default-features = false, features = ["tokenizers", "ruy"] }` — bỏ feature `sentencepiece`, dùng tokenizer HF `tokenizers` (đọc `tokenizer.json`, pure Rust) thay binding sentencepiece native. `ruy` cần cho backend SGEMM CPU (thiếu sẽ lỗi runtime "No SGEMM backend on CPU", không phải lỗi build).
   2. Build với `RUSTFLAGS="-C target-feature=+crt-static"` — giải pháp này ĐÃ THỬ THẤT BẠI ở `app_lib` (vì `ort` prebuilt object cố định `/MD`), nhưng ở crate riêng không có `ort` nên hoạt động được. **Đây chính là lý do kiến trúc phải là sidecar (process/crate tách biệt), không thể chỉ "tách module" trong cùng crate.**
   3. Trên Windows, path build CTranslate2+ruy rất dài, dễ vượt MAX_PATH 260 ký tự → lỗi `MSB3501`; fix bằng `CARGO_TARGET_DIR` ngắn (vd `C:\ct2b`).
-- **Model thật**: `JustFrederik/nllb-200-distilled-600M-ct2-int8` (Hugging Face, NLLB-200 600M đã convert CTranslate2 + quantize int8, ~647MB). **License `cc-by-nc-4.0` (non-commercial)** — chỉ dùng để dev/verify kỹ thuật ở đây; app phát hành thương mại cần đổi model.
-- **Kết quả**: `cargo test --lib core::translator -- --include-ignored` (với `SORA_TRANSLATE_SIDECAR_PATH`/`SORA_NLLB_MODEL_PATH` trỏ sidecar/model thật) → **5/5 pass**, bao gồm `dich_cau_co_dinh_dung_nghia_va_on_dinh`: `"Hello, how are you?"` → `"Chào, anh thế nào?"`, ổn định giữa 2 lần gọi (FR-004). **SC-001 đã xác nhận bằng dữ liệu thật** — roadmap.md đã tick dòng dịch local.
+- **Model thật (lần đầu)**: `JustFrederik/nllb-200-distilled-600M-ct2-int8` (Hugging Face, NLLB-200 600M đã convert CTranslate2 + quantize int8, ~647MB). **License `cc-by-nc-4.0` (non-commercial)**.
+- **Kết quả (lần đầu)**: `cargo test --lib core::translator -- --include-ignored` → **5/5 pass**, `"Hello, how are you?"` → `"Chào, anh thế nào?"`, ổn định giữa 2 lần gọi (FR-004). **SC-001 đã xác nhận bằng dữ liệu thật**.
+
+## Phần 3 — Đổi sang model open-source (cùng ngày, theo yêu cầu người dùng "đổi model khác theo dạng open source")
+
+Model NLLB-200 ở phần 2 license `cc-by-nc-4.0` — không phù hợp nếu app phát hành thương mại. Đổi sang **`gaudi/opus-mt-en-vi-ctranslate2`** (Marian-MT, chuyển đổi CTranslate2 của `Helsinki-NLP/opus-mt-en-vi`, **license Apache-2.0**, ~148MB, nhỏ hơn NLLB-200 nhiều).
+
+- **Phát hiện khi đổi**: model Marian-MT này dùng `source.spm`/`target.spm` (sentencepiece thô), không có `tokenizer.json` → phải dùng feature `ct2rs` = `sentencepiece` (thay `tokenizers` đã dùng ở phần 2). Thử lại `RUSTFLAGS=-C target-feature=+crt-static` cho feature `sentencepiece` (crate riêng, không có `ort`) — **build thành công**, xác nhận flag này fix được xung đột CRT nội bộ của `ct2rs` bất kể dùng tokenizer nào (`tokenizers` hay `sentencepiece`), miễn là build trong crate riêng.
+- **Khác biệt mô hình dịch**: Marian-MT (opus-mt-en-vi) là model 1 cặp ngôn ngữ cố định — không dùng mã ngôn ngữ FLORES-200 như NLLB. `translate-sidecar/src/main.rs` đổi từ `translate_batch_with_source_and_target_prefix` sang `translate_batch` thường; vẫn giữ flag CLI `--source-lang`/`--target-lang` để hợp đồng sidecar tổng quát cho model khác sau này, chỉ không dùng giá trị.
+- **Đổi tên code**: `core/translator.rs`: `NllbTranslator` → `SidecarTranslator` (tên cũ sai vì không còn là NLLB); biến môi trường test `SORA_NLLB_MODEL_PATH` → `SORA_TRANSLATE_MODEL_PATH`.
+- **Kết quả**: `"Hello, how are you?"` → `"Xin chào, anh khỏe không?"`, ổn định giữa 2 lần gọi. 5/5 test pass, 52/52 unit test toàn project pass.
+- **Kết luận chung**: kiến trúc sidecar (crate riêng + `RUSTFLAGS=+crt-static`) hoạt động với cả 2 họ model (NLLB và Marian-MT) — chọn model nào là quyết định sản phẩm (chất lượng vs license), không phải giới hạn kỹ thuật.
 
 ## Bằng chứng test (`.specify/specs/16/evidence/`)
 - `sidecar_khong_ton_tai_tra_loi` (FR-002) — **PASS**.
 - `input_rong_tra_ve_rong_khong_spawn_tien_trinh` (FR-003) — **PASS**.
 - `dich_kem_ngu_canh`, `goi_qua_trait_object` (mock cũ từ PBI 3) — **PASS**, không hồi quy.
-- `dich_cau_co_dinh_dung_nghia_va_on_dinh` (SC-001, FR-004) — **PASS** (xác nhận bằng sidecar + model thật, xem phần 2 trên).
+- `dich_cau_co_dinh_dung_nghia_va_on_dinh` (SC-001, FR-004) — **PASS** với model hiện tại `gaudi/opus-mt-en-vi-ctranslate2` (Apache-2.0).
 - 5/5 test pass; `cargo build` (binary chính `app`) vẫn thành công — sidecar không đụng tới `app_lib`.
-- Chi tiết: `evidence/T005-T006-testcase.md`, `evidence/T007-testcase.md`, log: `evidence/T008-result.log`, `evidence/T007-result.log`.
+- Chi tiết: `evidence/T005-T006-testcase.md`, `evidence/T007-testcase.md` (có cả lịch sử đổi model), log: `evidence/T008-result.log`, `evidence/T007-result.log`.
 
 ## Liên quan
 [[PBI-12-stt-local-whisper]], [[PBI-9-vad-silero]], [[Quyet-dinh-hop-dong-core]], [[Quyet-dinh-ngon-ngu-mac-dinh]], [[Rui-ro-ky-thuat]], [[Pipeline-xu-ly-audio]], [[Trang-thai-ma-nguon]]
