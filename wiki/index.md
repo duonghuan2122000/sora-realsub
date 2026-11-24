@@ -15,6 +15,7 @@
 ## Decisions
 - [[Cau-hoi-con-mo]] — cặp ngôn ngữ, cloud vs local chưa chốt
 - [[Quyet-dinh-OS-muc-tieu]] — Windows trước, macOS Backlog (PBI 1, đã chốt)
+- [[Quyet-dinh-ngon-ngu-mac-dinh]] — cặp ngôn ngữ mặc định en-US → vi-VN (PBI 2, đã chốt)
 - [[Rui-ro-ky-thuat]] — độ trễ, khởi động, chi phí GPU, riêng tư
 
 ## Trạng thái code hiện tại

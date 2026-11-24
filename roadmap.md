@@ -7,7 +7,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 ## M0 — Quyết định nền tảng
 
 - [x] Chốt OS mục tiêu (Windows trước, macOS sau hay song song)
-- [ ] Chốt cặp ngôn ngữ mặc định (ví dụ English → Vietnamese)
+- [x] Chốt cặp ngôn ngữ mặc định (ví dụ English → Vietnamese)
 - [ ] Chốt hướng xử lý: cloud / local / cả hai (ảnh hưởng trait STT, Translator)
 - [ ] Định nghĩa trait Core: `AudioSource`, `SpeechToText`, `Translator`, `SubtitleSink` (chỉ interface, chưa implement)
 

@@ -80,6 +80,10 @@ Giữ phần đặc thù OS sau trait `AudioSource` và module `platform/` để
 
 **Quyết định (PBI 1)**: Windows là OS mục tiêu đầu tiên — đối tượng dùng chính (họp/stream công ty) phổ biến Windows, và WASAPI loopback là API sẵn có, ổn định, không cần driver phụ như macOS (BlackHole). macOS triển khai sau, nằm ở Backlog, không block các milestone M1–M8.
 
+## Cặp ngôn ngữ mặc định
+
+**Quyết định (PBI 2)**: Cặp ngôn ngữ mặc định là nguồn `en-US` (English) → đích `vi-VN` (Vietnamese) — dùng làm giá trị khởi tạo (fallback) khi người dùng chưa cấu hình ngôn ngữ. Lý do: đối tượng dùng chính của Sora RealSub (họp/stream) thường nghe nội dung tiếng Anh và cần phụ đề tiếng Việt. Người dùng đổi được cặp ngôn ngữ qua UI (M6), giá trị này không bị khoá cứng.
+
 ## Đóng gói và phân phối
 
 - Tauri bundler: MSI/NSIS cho Windows.
