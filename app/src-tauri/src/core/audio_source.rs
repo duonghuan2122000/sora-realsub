@@ -71,8 +71,10 @@ mod tests {
 
     #[test]
     fn doi_cai_dat_khong_can_sua_code_goi() {
-        let sources: Vec<Box<dyn AudioSource>> =
-            vec![Box::new(MockAudioSourceSilent), Box::new(MockAudioSourceNoise)];
+        let sources: Vec<Box<dyn AudioSource>> = vec![
+            Box::new(MockAudioSourceSilent),
+            Box::new(MockAudioSourceNoise),
+        ];
         let results: Vec<f32> = sources
             .iter()
             .map(|s| run_and_collect_first_sample(s.as_ref()))
