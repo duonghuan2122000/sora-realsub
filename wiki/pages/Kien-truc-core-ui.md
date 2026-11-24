@@ -26,5 +26,8 @@ Tauri 2 — core Rust, UI web nhẹ, đóng gói nhỏ hơn Electron. (Overview 
 
 > **Mâu thuẫn tài liệu**: `docs/sora-realsub-overview.md` (giai đoạn ý tưởng) còn để mở "Tauri hoặc Electron... hoặc WPF/.NET"; `docs/tech-stack.md` (mới hơn, chi tiết hơn) đã chốt Tauri 2 + Rust + Vue 3. Coi tech-stack.md là nguồn đúng hiện tại.
 
+## Trạng thái hiện tại
+4 trait đã định nghĩa (chỉ interface + mock test, PBI 3, 2026-11-24): `AudioSource`, `SpeechToText`, `Translator`, `SubtitleSink` tại `app/src-tauri/src/core/`. Chi tiết: [[Quyet-dinh-hop-dong-core]].
+
 ## Liên quan
-[[Core-Rust]], [[UI-Vue]], [[Pipeline-xu-ly-audio]], [[Cau-hoi-con-mo]]
+[[Core-Rust]], [[UI-Vue]], [[Pipeline-xu-ly-audio]], [[Cau-hoi-con-mo]], [[Quyet-dinh-hop-dong-core]]

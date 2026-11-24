@@ -22,7 +22,7 @@ sources: [docs/tech-stack.md, app/src-tauri]
 | Log | tracing | |
 
 ## Mã nguồn hiện tại
-`app/src-tauri/src/main.rs`, `lib.rs` — skeleton Tauri 2 mặc định, chưa có module audio/VAD/STT/dịch. Xem [[Trang-thai-ma-nguon]].
+`app/src-tauri/src/main.rs`, `lib.rs` — skeleton Tauri 2 mặc định. **Mới (PBI 3, 2026-11-24)**: module `core/` đã có 4 trait (`AudioSource`, `SpeechToText`, `Translator`, `SubtitleSink`) + kiểu dữ liệu (`AudioFrame`, `TranscriptChunk`, `Subtitle`...) + `CoreError`, chỉ interface và mock test, chưa cài đặt logic thật. Dependency mới: `async-trait`, `thiserror`. Xem [[Trang-thai-ma-nguon]], [[Quyet-dinh-hop-dong-core]].
 
 ## Liên quan
-[[Kien-truc-core-ui]], [[Pipeline-xu-ly-audio]]
+[[Kien-truc-core-ui]], [[Pipeline-xu-ly-audio]], [[Quyet-dinh-hop-dong-core]]
