@@ -22,7 +22,8 @@ sources: [docs/tech-stack.md, app/src-tauri]
 | Log | tracing | |
 
 ## Mã nguồn hiện tại
-`app/src-tauri/src/main.rs`, `lib.rs` — skeleton Tauri 2 mặc định. **Mới (PBI 3, 2026-11-24)**: module `core/` đã có 4 trait (`AudioSource`, `SpeechToText`, `Translator`, `SubtitleSink`) + kiểu dữ liệu (`AudioFrame`, `TranscriptChunk`, `Subtitle`...) + `CoreError`, chỉ interface và mock test, chưa cài đặt logic thật. Dependency mới: `async-trait`, `thiserror`. Xem [[Trang-thai-ma-nguon]], [[Quyet-dinh-hop-dong-core]].
+`app/src-tauri/src/main.rs`, `lib.rs` — skeleton Tauri 2 mặc định. **PBI 3**: module `core/` đã có 4 trait (`AudioSource`, `SpeechToText`, `Translator`, `SubtitleSink`) + kiểu dữ liệu (`AudioFrame`, `TranscriptChunk`, `Subtitle`...) + `CoreError`, chỉ interface và mock test, chưa cài đặt logic thật. Dependency mới: `async-trait`, `thiserror`.
+**Mới (PBI 4, 2026-11-24)**: `core/devices.rs` — liệt kê thiết bị audio input dùng `cpal` thật (lần đầu dùng `cpal` thay vì chỉ ghi trong bảng lựa chọn), có Tauri command `list_input_devices_cmd`. Xem [[PBI-4-liet-ke-thiet-bi-mic]], [[Trang-thai-ma-nguon]], [[Quyet-dinh-hop-dong-core]].
 
 ## Liên quan
-[[Kien-truc-core-ui]], [[Pipeline-xu-ly-audio]], [[Quyet-dinh-hop-dong-core]]
+[[Kien-truc-core-ui]], [[Pipeline-xu-ly-audio]], [[Quyet-dinh-hop-dong-core]], [[PBI-4-liet-ke-thiet-bi-mic]]

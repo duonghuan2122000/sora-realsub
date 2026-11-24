@@ -19,5 +19,8 @@
 - [[Quyet-dinh-hop-dong-core]] — 4 trait Core (AudioSource/SpeechToText/Translator/SubtitleSink), chỉ interface (PBI 3, đã chốt)
 - [[Rui-ro-ky-thuat]] — độ trễ, khởi động, chi phí GPU, riêng tư
 
+## PBI đã thi công
+- [[PBI-4-liet-ke-thiet-bi-mic]] — liệt kê thiết bị audio input qua Tauri command, UI chọn mic (M1, 2026-11-24)
+
 ## Trạng thái code hiện tại
-- [[Trang-thai-ma-nguon]] — snapshot app/ (2026-11-24, cập nhật sau PBI 3): interface Core xong (4 trait), chưa có logic nghiệp vụ thật
+- [[Trang-thai-ma-nguon]] — snapshot app/ (2026-11-24, cập nhật sau PBI 4): logic nghiệp vụ thật đầu tiên (liệt kê thiết bị mic), interface Core (PBI 3) vẫn chưa có cài đặt khác

@@ -22,7 +22,7 @@ sources: [docs/tech-stack.md, app/src]
 - **Cửa sổ phụ đề nổi**: trong suốt, always-on-top, kéo thả được, click-xuyên (tuỳ chọn).
 
 ## Mã nguồn hiện tại
-`app/src/App.vue`, `main.ts` — skeleton Vite+Vue mặc định (chưa có cửa sổ chính/phụ đề, chưa cài shadcn-vue/Pinia/vue-i18n/Lucide trong `package.json` hiện tại). Xem [[Trang-thai-ma-nguon]].
+`app/src/App.vue`, `main.ts` — skeleton Vite+Vue mặc định (chưa cài shadcn-vue/Pinia/vue-i18n/Lucide trong `package.json` hiện tại). **Mới (PBI 4, 2026-11-24)**: `app/src/components/DeviceSelector.vue` — component UI thật đầu tiên (chọn mic, gọi Tauri command qua `invoke`), gắn vào `App.vue`; kèm test `DeviceSelector.test.ts` (vitest, mock `invoke`). Xem [[PBI-4-liet-ke-thiet-bi-mic]], [[Trang-thai-ma-nguon]].
 
 ## Liên quan
-[[Kien-truc-core-ui]], [[Style-guide-token]]
+[[Kien-truc-core-ui]], [[Style-guide-token]], [[PBI-4-liet-ke-thiet-bi-mic]]
