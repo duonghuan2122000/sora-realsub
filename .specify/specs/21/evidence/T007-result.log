@@ -1,0 +1,11 @@
+npm notice run app@0.1.0 test
+npm notice run vitest run
+
+ RUN  v5.1.1 C:/work/dbhuan/sora-realsub/app
+
+
+ Test Files  3 passed (3)
+      Tests  8 passed (8)
+   Start at  21:02:19
+   Duration  1.28s (environment 89%, import 8%, tests 2%, transform 1%)
+
