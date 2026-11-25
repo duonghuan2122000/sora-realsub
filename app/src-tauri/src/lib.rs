@@ -268,6 +268,24 @@ fn stop_capture(session: State<CaptureSessionState>) -> Result<(), String> {
     session.stop().map_err(|e| e.to_string())
 }
 
+/// Tạo cửa sổ phụ đề nổi: always-on-top, không viền/title bar (PBI 20).
+/// Nội dung phụ đề thật sẽ được gắn ở PBI sau; ở đây chỉ tạo khung cửa sổ.
+fn create_subtitle_window(app: &tauri::App) -> tauri::Result<()> {
+    tauri::WebviewWindowBuilder::new(
+        app,
+        "subtitle",
+        tauri::WebviewUrl::App("subtitle.html".into()),
+    )
+    .title("Sora RealSub - Phụ đề")
+    .decorations(false)
+    .always_on_top(true)
+    .transparent(true)
+    .skip_taskbar(true)
+    .inner_size(800.0, 150.0)
+    .build()?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -279,6 +297,10 @@ pub fn run() {
             start_capture,
             stop_capture
         ])
+        .setup(|app| {
+            create_subtitle_window(app)?;
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
