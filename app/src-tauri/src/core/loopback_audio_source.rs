@@ -1,3 +1,7 @@
+//! Cài đặt `LoopbackAudioSource` cho Windows (WASAPI loopback). Chỉ build
+//! trên Windows — bản Linux xem `loopback_audio_source_linux.rs`.
+#![cfg(windows)]
+
 use super::audio_source::AudioSource;
 use super::error::CoreError;
 use super::types::{AudioFrame, StreamHandle};

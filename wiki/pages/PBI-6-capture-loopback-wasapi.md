@@ -36,5 +36,15 @@ Tính năng thứ ba của M1 (Audio Capture): cài đặt thứ hai của trait
 - Capture loopback 3 giây khi hoàn toàn im lặng: 0 khối mẫu, không lỗi/crash/treo, dừng đúng hạn. Log: `T008-result.log`.
 - `cargo clippy --all-targets`: sạch, không warning.
 
+## Cập nhật (PBI 18)
+
+`wasapi = "0.26"` ban đầu nằm vô điều kiện trong `[dependencies]`, chặn
+`cargo build`/`cargo test` trên Linux (phát hiện ở PBI 17, xem
+[[Rui-ro-ky-thuat]]). PBI 18 đã gate nó vào
+`[target.'cfg(windows)'.dependencies]` và thêm `#![cfg(windows)]` ở đầu file
+`loopback_audio_source.rs` — logic bên trong không đổi. Linux có cài đặt
+`LoopbackAudioSource` riêng (PulseAudio/PipeWire) tại
+`loopback_audio_source_linux.rs`. Xem [[PBI-18-loopback-linux]].
+
 ## Liên quan
-[[Core-Rust]], [[Pipeline-xu-ly-audio]], [[Trang-thai-ma-nguon]], [[Quyet-dinh-hop-dong-core]], [[PBI-5-capture-mic-pcm]]
+[[Core-Rust]], [[Pipeline-xu-ly-audio]], [[Trang-thai-ma-nguon]], [[Quyet-dinh-hop-dong-core]], [[PBI-5-capture-mic-pcm]], [[PBI-18-loopback-linux]]

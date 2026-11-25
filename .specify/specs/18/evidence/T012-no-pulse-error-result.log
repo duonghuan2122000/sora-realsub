@@ -1,0 +1,3 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.28s
+     Running `target/debug/capture_loopback_to_wav 2`
+Lỗi capture loopback: lỗi I/O: không mở được monitor source mặc định: Connection refused

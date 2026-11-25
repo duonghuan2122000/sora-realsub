@@ -27,7 +27,14 @@ sources: [docs/tech-stack.md]
 - **Ghi chú phụ (Windows MAX_PATH)**: build CTranslate2 + `ruy` tạo path build rất dài, dễ vượt 260 ký tự → lỗi MSBuild `MSB3501`. Fix bằng `CARGO_TARGET_DIR` ngắn.
 - **Áp dụng cho tương lai**: trước khi thêm bất kỳ crate binding C++ native nào (nhận diện qua có `build.rs` gọi `cmake`), phải thử `cargo build`/`cargo test` thật (không chỉ `cargo check`, vì `cargo check` không link nên không phát hiện được xung đột này) trong project đã có `ort`. Nếu xung đột, tách crate đó ra 1 Cargo package riêng (không chỉ 1 module/`[[bin]]` trong cùng package — `[[bin]]` cùng package vẫn ổn nếu bin đó không bị lib khác trong cùng package kéo theo, nhưng an toàn nhất là package riêng) và gọi qua `std::process::Command` (kiến trúc sidecar).
 
-## Dependency Windows-only không gate theo target — chặn build/test trên Linux (phát hiện ở PBI 17)
+## Dependency Windows-only không gate theo target — chặn build/test trên Linux (phát hiện ở PBI 17, đã xử lý ở PBI 18)
+
+**Cập nhật (PBI 18)**: đã gate `wasapi` bằng `[target.'cfg(windows)'.dependencies]` và
+thêm `LoopbackAudioSource` bản Linux dùng `libpulse-binding`/`libpulse-simple-binding`
+(module riêng `loopback_audio_source_linux.rs`, gate `#[cfg(target_os = "linux")]`,
+`mod.rs` export cùng tên `LoopbackAudioSource` theo OS build) — xem
+[[PBI-18-loopback-linux]]. `lib.rs` và các `src/bin/*.rs` dùng `LoopbackAudioSource`
+không cần sửa vì chỉ gọi qua trait `AudioSource`, không có code riêng theo OS.
 - `wasapi = "0.26"` trong `app/src-tauri/Cargo.toml` (từ [[PBI-6-capture-loopback-wasapi]], M1)
   là dependency **vô điều kiện** (không `[target.'cfg(windows)'.dependencies]`), dù bản thân
   crate `wasapi` chỉ build được trên Windows. Trên Linux, build kéo theo `windows` → crate

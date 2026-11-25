@@ -18,7 +18,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 - [x] Capture loopback âm thanh hệ thống trên Windows (WASAPI loopback), test ghi ra .wav
 - [x] Trộn (mix) mic + loopback thành 1 stream, test so khớp cả 2 nguồn nghe được trong file output
 - [x] Command Tauri `start_capture` / `stop_capture`, test start/stop không leak thread/handle
-- [ ] **Hỗ trợ Linux song song với Windows**: gate dependency `wasapi` theo `cfg(windows)` trong `Cargo.toml`/`core/mod.rs` (để `cargo build`/`cargo test` chạy được trên Linux — xem `wiki/pages/Rui-ro-ky-thuat.md`), implement capture loopback trên Linux qua PulseAudio/PipeWire monitor source (tương đương `LoopbackAudioSource` cho Windows), test ghi ra .wav trên cả 2 OS
+- [ ] **Hỗ trợ Linux song song với Windows**: gate dependency `wasapi` theo `cfg(windows)` trong `Cargo.toml`/`core/mod.rs` (để `cargo build`/`cargo test` chạy được trên Linux — xem `wiki/pages/Rui-ro-ky-thuat.md`), implement capture loopback trên Linux qua PulseAudio/PipeWire monitor source (tương đương `LoopbackAudioSource` cho Windows), test ghi ra .wav trên cả 2 OS (PBI 18: đã làm xong + test pass trên **Linux** — `cargo build`/`cargo test` chạy được, capture loopback thật xác nhận bằng PulseAudio + tone test 440Hz ghi đúng ra .wav; xem `wiki/pages/PBI-18-loopback-linux.md`. **Chưa tick** vì chưa xác nhận lại bằng test .wav thật trên **Windows** — không có máy Windows trong môi trường implement; code Windows chỉ thêm `#[cfg(windows)]` bọc ngoài, logic cũ không đổi, nhưng cần người có máy Windows chạy lại `cargo test`/`capture_loopback_to_wav` để xác nhận 0 regression trước khi tick dòng này)
 
 ## M2 — VAD (Voice Activity Detection)
 
