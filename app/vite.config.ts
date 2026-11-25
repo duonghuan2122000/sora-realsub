@@ -2,11 +2,22 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 // @ts-expect-error type error without @types/node package
 import process from "node:process";
+// @ts-expect-error type error without @types/node package
+import { fileURLToPath, URL } from "node:url";
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(() => ({
   plugins: [vue()],
+
+  build: {
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL("./index.html", import.meta.url)),
+        subtitle: fileURLToPath(new URL("./subtitle.html", import.meta.url)),
+      },
+    },
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

@@ -49,7 +49,7 @@ cài đặt loopback riêng:
 
 ## M5 — Cửa sổ phụ đề (Subtitle Overlay UI)
 
-- [ ] Tạo window Tauri riêng, always-on-top, không có border/title bar
+- [x] Tạo window Tauri riêng, always-on-top, không có border/title bar (PBI 20: `create_subtitle_window()` trong `lib.rs` + entry point `subtitle.html`; SC-001 + SC-002 đã xác nhận trực tiếp bởi người dùng trên máy Windows thật qua `bun run tauri dev`, xem `.specify/specs/20/evidence/T005-testcase.md`)
 - [ ] Hiển thị text phụ đề nhận từ event `subtitle-ready`, test hiển thị đúng khi có event liên tục
 - [ ] Auto-scroll/fade dòng cũ khi có dòng mới, test với nhiều dòng liên tiếp
 - [ ] Cho phép kéo-thả di chuyển vị trí cửa sổ, test vị trí được giữ sau khi thả

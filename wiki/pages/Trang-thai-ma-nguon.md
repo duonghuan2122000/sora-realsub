@@ -5,7 +5,7 @@ tags: [status]
 sources: [app/]
 ---
 
-# Trạng thái mã nguồn — snapshot 2026-11-25 (cập nhật sau PBI 19)
+# Trạng thái mã nguồn — snapshot 2026-11-25 (cập nhật sau PBI 20)
 
 Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ngày trên; ingest lại khi code có tiến triển mới.
 
@@ -74,18 +74,34 @@ Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ng�
   `libgtk-3-dev`, `libwebkit2gtk-4.1-dev`, `libjavascriptcoregtk-4.1-dev`, `libsoup-3.0-dev`,
   `librsvg2-dev`, `libasound2-dev`, `libpulse-dev`. **Hoàn tất M4 (Dịch), 3/3.** Xem
   [[PBI-19-noi-stt-dich-subtitle-ready]].
+- **Mới (PBI 20)**: `lib.rs` thêm hàm `create_subtitle_window(app: &tauri::App)` — tạo cửa sổ Tauri
+  thứ hai bằng `WebviewWindowBuilder::new(app, "subtitle", WebviewUrl::App("subtitle.html".into()))`
+  với `.decorations(false)`, `.always_on_top(true)`, `.transparent(true)`, `.skip_taskbar(true)`,
+  kích thước mặc định 800×150; gọi trong `.setup()` của `tauri::Builder::run()`. Dùng API chung
+  `always_on_top` của Tauri 2 (cross-platform Windows+Linux), không viết code riêng theo
+  `cfg(windows)`/`cfg(target_os = "linux")` như các PBI audio trước. Không thêm Cargo dependency,
+  không thêm Tauri command/event mới. **Hoàn tất mục đầu của M5 (Cửa sổ phụ đề), 1/6 mục.**
+  `cargo build` pass (`T004-cargo-build.log`). **SC-001/SC-002 đã xác nhận PASS** bằng GUI thật
+  trên máy Windows của người dùng (`bun run tauri dev`, quan sát trực tiếp: không viền + luôn nổi
+  trên) — roadmap đã tick dòng tương ứng. Xem [[PBI-20-cua-so-phu-de-noi]].
 - **Vẫn chưa có**: chọn thiết bị output cụ thể cho loopback (cả Windows và
   Linux — vẫn chỉ dùng thiết bị/sink mặc định), cấu hình model path qua
   UI/config thật (hiện đọc tạm từ biến môi trường `WHISPER_MODEL_PATH`/`SORA_TRANSLATE_SIDECAR_PATH`/`SORA_TRANSLATE_MODEL_PATH`), UI hiển thị thông báo lỗi `model-error` (toast/dialog, thuộc M6/M8), tự động retry khi model lỗi, cửa sổ phụ đề nổi hiển thị `subtitle-ready` thật (M5), lưu trữ thật trong [[Pipeline-xu-ly-audio]]. Chưa thấy `rusqlite` trong Cargo deps. Dòng roadmap "Ghép ngữ cảnh" (PBI 17) vẫn CHƯA tick vì SC-001 riêng của PBI 17 vẫn chưa xác nhận bằng sidecar+model thật (PBI 19 tái dùng logic đó, không xác nhận lại SC-001 cũ).
 
 ## app/src (UI Vue)
-- `App.vue`, `main.ts`, `vite-env.d.ts`, `sample.test.ts` — skeleton Vite+Vue 3 mặc định.
+- `App.vue`, `main.ts`, `vite-env.d.ts`, `sample.test.ts` — skeleton Vite+Vue 3 mặc định (cửa sổ chính).
 - **PBI 4**: `components/DeviceSelector.vue` — component UI thật đầu tiên (chọn mic từ danh sách thật, nút làm mới, thông báo rỗng/lỗi), gắn vào `App.vue`; kèm `DeviceSelector.test.ts` (vitest, 4 test pass).
-- Chưa có cửa sổ chính/phụ đề nổi riêng, chưa có Pinia/vue-i18n/shadcn-vue/Lucide, chưa có `styles/tokens.scss` theo [[Style-guide-token]].
+- **Mới (PBI 20)**: `subtitle/main.ts` + `subtitle/SubtitleApp.vue` — entry point Vue thứ hai cho cửa sổ
+  phụ đề nổi, mount vào `subtitle.html` (file mới ở root `app/`). `SubtitleApp.vue` hiện chỉ là khung
+  trống (`.subtitle-overlay`, nền trong suốt, full viewport) — chưa hiển thị nội dung `subtitle-ready`
+  thật (mục roadmap kế tiếp của M5). `vite.config.ts` thêm `build.rollupOptions.input` liệt kê cả
+  `index.html` và `subtitle.html` để Vite build đa trang (multi-window kiểu Tauri 2 khuyến nghị: mỗi
+  cửa sổ một entry HTML riêng, không dùng chung SPA route).
+- Chưa có Pinia/vue-i18n/shadcn-vue/Lucide, chưa có `styles/tokens.scss` theo [[Style-guide-token]].
 - **PBI 5, PBI 6, PBI 7, PBI 8 không đụng UI** — chỉ thi công phần lõi Rust capture + điều khiển phiên (mic, loopback, trộn, start/stop), command Tauri đã có nhưng chưa có nút bấm trong Vue.
 
 ## Kết luận
-M1 (Audio Capture) đã hoàn tất 6/6 mục (PBI 4-8 + PBI 18, nay chạy được trên cả Windows và Linux). M2 (VAD) đã hoàn tất 3/3 mục (PBI 9-11). M3 (STT streaming) đã hoàn tất 4/4 (PBI 12-15). **M4 (Dịch) đã hoàn tất 3/3**: `Translator` có cài đặt thật (`SidecarTranslator`, PBI 16) chạy qua sidecar process riêng (`app/translate-sidecar/`, đổi hướng do xung đột CRT native, xem [[Rui-ro-ky-thuat]]), **SC-001 (PBI 16) đã xác nhận bằng sidecar + model Marian-MT (opus-mt-en-vi, Apache-2.0, open-source) thật**; dùng được ngữ cảnh 1-2 câu trước khi dịch (PBI 17, **SC-001 riêng của PBI 17 vẫn chưa xác nhận bằng sidecar+model thật**, chỉ logic); và nay đã **nối STT final → Translator (có ngữ cảnh) → event `subtitle-ready`** (PBI 19) — 65/65 test pass, container lần này build/test được cả phần Tauri/GTK. Kiểm thử tay trên UI thật (có mic/GUI) vẫn là khoảng trống chung từ PBI 8; chưa có UI hiển thị thông báo `model-error`/cửa sổ phụ đề nổi thật (M5/M6/M8).
+M1 (Audio Capture) đã hoàn tất 6/6 mục (PBI 4-8 + PBI 18, nay chạy được trên cả Windows và Linux). M2 (VAD) đã hoàn tất 3/3 mục (PBI 9-11). M3 (STT streaming) đã hoàn tất 4/4 (PBI 12-15). **M4 (Dịch) đã hoàn tất 3/3**: `Translator` có cài đặt thật (`SidecarTranslator`, PBI 16) chạy qua sidecar process riêng (`app/translate-sidecar/`, đổi hướng do xung đột CRT native, xem [[Rui-ro-ky-thuat]]), **SC-001 (PBI 16) đã xác nhận bằng sidecar + model Marian-MT (opus-mt-en-vi, Apache-2.0, open-source) thật**; dùng được ngữ cảnh 1-2 câu trước khi dịch (PBI 17, **SC-001 riêng của PBI 17 vẫn chưa xác nhận bằng sidecar+model thật**, chỉ logic); và nay đã **nối STT final → Translator (có ngữ cảnh) → event `subtitle-ready`** (PBI 19) — 65/65 test pass, container lần này build/test được cả phần Tauri/GTK. **M5 (Cửa sổ phụ đề) đã bắt đầu, 1/6 mục**: cửa sổ phụ đề always-on-top/không viền đã tạo và **xác nhận PASS bằng GUI thật** (PBI 20, roadmap đã tick), chưa gắn nội dung `subtitle-ready` thật. Kiểm thử tay trên UI thật (có mic/GUI) vẫn là khoảng trống chung từ PBI 8; chưa có UI hiển thị thông báo `model-error` (M6/M8).
 
 ## Liên quan
-[[Core-Rust]], [[UI-Vue]], [[Style-guide-token]], [[Quyet-dinh-hop-dong-core]], [[PBI-4-liet-ke-thiet-bi-mic]], [[PBI-5-capture-mic-pcm]], [[PBI-6-capture-loopback-wasapi]], [[PBI-7-tron-mic-loopback]], [[PBI-8-start-stop-capture]], [[PBI-9-vad-silero]], [[PBI-10-cat-segment-khoang-lang]], [[PBI-11-vad-segment-event]], [[PBI-12-stt-local-whisper]], [[PBI-13-ghep-stt-vao-luong]], [[PBI-14-transcript-partial-final-event]], [[PBI-15-xu-ly-loi-runtime-model-stt]], [[PBI-16-dich-local-sidecar]], [[PBI-17-dich-co-ngu-canh]], [[PBI-18-loopback-linux]], [[PBI-19-noi-stt-dich-subtitle-ready]]
+[[Core-Rust]], [[UI-Vue]], [[Style-guide-token]], [[Quyet-dinh-hop-dong-core]], [[PBI-4-liet-ke-thiet-bi-mic]], [[PBI-5-capture-mic-pcm]], [[PBI-6-capture-loopback-wasapi]], [[PBI-7-tron-mic-loopback]], [[PBI-8-start-stop-capture]], [[PBI-9-vad-silero]], [[PBI-10-cat-segment-khoang-lang]], [[PBI-11-vad-segment-event]], [[PBI-12-stt-local-whisper]], [[PBI-13-ghep-stt-vao-luong]], [[PBI-14-transcript-partial-final-event]], [[PBI-15-xu-ly-loi-runtime-model-stt]], [[PBI-16-dich-local-sidecar]], [[PBI-17-dich-co-ngu-canh]], [[PBI-18-loopback-linux]], [[PBI-19-noi-stt-dich-subtitle-ready]], [[PBI-20-cua-so-phu-de-noi]]
