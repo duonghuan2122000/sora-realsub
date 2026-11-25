@@ -35,18 +35,52 @@ describe('SubtitleApp', () => {
     expect(wrapper.text()).toContain('xin chào')
   })
 
-  it('cập nhật đúng thứ tự khi nhận nhiều event liên tiếp', async () => {
+  it('cập nhật đúng thứ tự khi nhận nhiều event liên tiếp, giữ tối đa 3 dòng gần nhất', async () => {
     const wrapper = mount(SubtitleApp)
     await vi.waitFor(() => expect(registeredHandler).toBeDefined())
 
     for (let i = 0; i < 20; i++) {
       emitSubtitleReady(`câu ${i}`)
       await wrapper.vm.$nextTick()
-      expect(wrapper.text()).toContain(`câu ${i}`)
     }
 
-    expect(wrapper.text()).toContain('câu 19')
-    expect(wrapper.text()).not.toContain('câu 18')
+    const texts = wrapper.findAll('.subtitle-text').map((el) => el.text())
+    expect(texts).toEqual(['câu 17', 'câu 18', 'câu 19'])
+  })
+
+  it('loại dòng cũ nhất khỏi DOM khi vượt giới hạn N=3', async () => {
+    const wrapper = mount(SubtitleApp)
+    await vi.waitFor(() => expect(registeredHandler).toBeDefined())
+
+    emitSubtitleReady('dòng 1')
+    emitSubtitleReady('dòng 2')
+    emitSubtitleReady('dòng 3')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.text()).toContain('dòng 1')
+
+    emitSubtitleReady('dòng 4')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).not.toContain('dòng 1')
+    expect(wrapper.text()).toContain('dòng 2')
+    expect(wrapper.text()).toContain('dòng 3')
+    expect(wrapper.text()).toContain('dòng 4')
+  })
+
+  it('dòng mới nhất mờ ít nhất, dòng cũ hơn mờ nhiều hơn', async () => {
+    const wrapper = mount(SubtitleApp)
+    await vi.waitFor(() => expect(registeredHandler).toBeDefined())
+
+    emitSubtitleReady('dòng A')
+    emitSubtitleReady('dòng B')
+    emitSubtitleReady('dòng C')
+    await wrapper.vm.$nextTick()
+
+    const lineEls = wrapper.findAll('.subtitle-text')
+    expect(lineEls).toHaveLength(3)
+    expect(lineEls[0].classes()).toContain('subtitle-text--age-2')
+    expect(lineEls[1].classes()).toContain('subtitle-text--age-1')
+    expect(lineEls[2].classes()).toContain('subtitle-text--age-0')
   })
 
   it('không hiển thị dòng trống khi translatedText rỗng', async () => {
