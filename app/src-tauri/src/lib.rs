@@ -7,7 +7,7 @@ use core::{
     TranscriptPipeline, Translator, VadPipeline, WhisperSpeechToText, list_input_devices,
 };
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, State, WebviewUrl, WebviewWindowBuilder};
 
 /// Payload sự kiện Tauri `transcript-partial`/`transcript-final` phát ra UI (camelCase, xem
 /// contracts/transcript-events.md PBI 14).
@@ -122,6 +122,46 @@ async fn translate_final_chunk(
         Err(err) => on_error(&err),
     }
     recent_ctx.push(&chunk.text);
+}
+
+/// Label của cửa sổ phụ đề nổi always-on-top (PBI 20).
+const SUBTITLE_OVERLAY_LABEL: &str = "subtitle_overlay";
+
+/// Cấu hình mong muốn của cửa sổ phụ đề overlay (PBI 20, FR-001..FR-004; research.md quyết
+/// định 2). Tách thành dữ liệu thuần để test được trực tiếp: `tauri::test::mock_app()` dùng
+/// `MockRuntime`, trong đó các getter như `is_decorated()`/`is_always_on_top()`/`is_focused()`
+/// luôn trả giá trị cố định bất kể builder truyền gì (không mô phỏng window manager thật), nên
+/// không thể dùng để xác nhận cấu hình đã áp dụng — phải so khớp trực tiếp giá trị hằng số này.
+pub struct SubtitleOverlayConfig {
+    pub decorations: bool,
+    pub always_on_top: bool,
+    pub focused: bool,
+    pub skip_taskbar: bool,
+    pub resizable: bool,
+}
+
+pub const SUBTITLE_OVERLAY_CONFIG: SubtitleOverlayConfig = SubtitleOverlayConfig {
+    decorations: false,
+    always_on_top: true,
+    focused: false,
+    skip_taskbar: true,
+    resizable: true,
+};
+
+/// Tạo cửa sổ phụ đề nổi always-on-top, không viền/title bar, không giành focus khi tạo
+/// (PBI 20, FR-001..FR-004; xem research.md quyết định 1, 2). Tách hàm thuần để test được
+/// qua `tauri::test::mock_app()` không cần hiển thị thật.
+pub fn create_subtitle_overlay_window<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+) -> tauri::Result<tauri::WebviewWindow<R>> {
+    let cfg = SUBTITLE_OVERLAY_CONFIG;
+    WebviewWindowBuilder::new(app, SUBTITLE_OVERLAY_LABEL, WebviewUrl::default())
+        .decorations(cfg.decorations)
+        .always_on_top(cfg.always_on_top)
+        .focused(cfg.focused)
+        .skip_taskbar(cfg.skip_taskbar)
+        .resizable(cfg.resizable)
+        .build()
 }
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -273,6 +313,13 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(CaptureSessionState::new())
+        .setup(|app| {
+            // Không chặn app khởi động cửa sổ `main` nếu tạo overlay thất bại (PBI 20, T003).
+            if let Err(err) = create_subtitle_overlay_window(app.handle()) {
+                eprintln!("lỗi tạo cửa sổ phụ đề overlay: {err}");
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             greet,
             list_input_devices_cmd,

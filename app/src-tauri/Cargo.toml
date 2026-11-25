@@ -44,6 +44,7 @@ libpulse-binding = "2"
 libpulse-simple-binding = "2"
 
 [dev-dependencies]
+tauri = { version = "2", features = ["test"] }
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]

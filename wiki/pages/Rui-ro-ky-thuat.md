@@ -55,5 +55,25 @@ không cần sửa vì chỉ gọi qua trait `AudioSource`, không có code riê
   (`lib.rs`, 2 file `src/bin/`), không chỉ 1 dòng — nên làm có kế hoạch riêng, không tiện làm
   "tạm" trong một PBI không liên quan audio.
 
+## Môi trường test Tauri (`tauri::test::mock_app()`) không mô phỏng window manager thật (PBI 20, M5)
+
+`tauri::test::mock_app()`/`MockRuntime` (feature `test` của crate `tauri`) chỉ là stub tối giản
+cho IPC/command, **không** mô phỏng hành vi window manager: các getter trạng thái cửa sổ như
+`is_decorated()`, `is_always_on_top()`, `is_focused()` luôn trả về **hằng số cố định** (thường
+`false`) bất kể giá trị đã truyền vào `WebviewWindowBuilder`. Hệ quả: test viết theo kiểu "tạo
+cửa sổ với `.decorations(false)` rồi assert `window.is_decorated() == false`" **pass giả** — sẽ
+pass kể cả khi code thực sự gọi `.decorations(true)` (chỉ tình cờ giá trị mong muốn trùng hằng số
+mock trả về), không phát hiện được regression thật. Giải pháp đã áp dụng ở PBI 20: tách cấu hình
+mong muốn thành hằng số Rust thuần (`SUBTITLE_OVERLAY_CONFIG`), assert trực tiếp vào hằng số đó
+thay vì gọi getter của mock window — xem [[PBI-20-overlay-always-on-top]].
+
+Tương tự, container cloud dùng để implement chỉ có `Xvfb` (X server ảo, không compositing/window
+manager) — có thể chạy `tauri dev` và chụp ảnh, đọc property X11 thô (`xprop`/`xwininfo`), nhưng
+**không có WM nào để phản hồi `_NET_WM_STATE`** (always-on-top thật) hay quản lý focus thật. Mọi
+tính năng liên quan hành vi window-manager-dependent (PBI 20 và các mục còn lại của M5: kéo-thả,
+resize, ẩn/hiện) sẽ gặp lại giới hạn này — cần máy GUI thật (Windows hoặc Linux có desktop
+environment) để xác nhận trực quan, giống pattern "chưa xác nhận trên máy Windows/Linux khác"
+đã áp dụng ở PBI 17/18.
+
 ## Liên quan
-[[Tong-quan-du-an]], [[Pipeline-xu-ly-audio]], [[PBI-16-dich-local-sidecar]], [[PBI-9-vad-silero]], [[PBI-6-capture-loopback-wasapi]], [[PBI-17-dich-co-ngu-canh]]
+[[Tong-quan-du-an]], [[Pipeline-xu-ly-audio]], [[PBI-16-dich-local-sidecar]], [[PBI-9-vad-silero]], [[PBI-6-capture-loopback-wasapi]], [[PBI-17-dich-co-ngu-canh]], [[PBI-20-overlay-always-on-top]]

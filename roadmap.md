@@ -49,7 +49,7 @@ cài đặt loopback riêng:
 
 ## M5 — Cửa sổ phụ đề (Subtitle Overlay UI)
 
-- [ ] Tạo window Tauri riêng, always-on-top, không có border/title bar
+- [ ] Tạo window Tauri riêng, always-on-top, không có border/title bar (PBI 20: đã code xong — `create_subtitle_overlay_window()` dùng `.decorations(false)`/`.always_on_top(true)`/`.focused(false)`, capability riêng, 67/67 test pass trong container; xem `wiki/pages/PBI-20-overlay-always-on-top.md`. **Chưa tick** vì container chỉ có `Xvfb` (không có window manager thật) nên không xác nhận được trực quan hành vi always-on-top/focus thật — cần người có máy Windows hoặc Linux desktop thật chạy lại theo `.specify/specs/20/quickstart.md` trước khi tick)
 - [ ] Hiển thị text phụ đề nhận từ event `subtitle-ready`, test hiển thị đúng khi có event liên tục
 - [ ] Auto-scroll/fade dòng cũ khi có dòng mới, test với nhiều dòng liên tiếp
 - [ ] Cho phép kéo-thả di chuyển vị trí cửa sổ, test vị trí được giữ sau khi thả

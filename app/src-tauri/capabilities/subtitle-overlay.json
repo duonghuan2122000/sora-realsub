@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "subtitle-overlay",
+  "description": "Capability tối thiểu cho cửa sổ phụ đề nổi always-on-top (subtitle_overlay)",
+  "windows": ["subtitle_overlay"],
+  "permissions": [
+    "core:default"
+  ]
+}

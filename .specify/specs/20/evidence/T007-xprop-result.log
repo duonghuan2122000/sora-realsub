@@ -1,0 +1,26 @@
+=== xwininfo -root -tree ===
+
+xwininfo: Window id: 0x21f (the root window) (has no name)
+
+  Root window id: 0x21f (the root window) (has no name)
+  Parent window id: 0x0 (none)
+     4 children:
+     0x200021 "Tauri App": ("app" "App")  800x600+0+0  +0+0
+        1 child:
+        0x200022 (has no name): ()  1x1+-1+-1  +-1+-1
+     0x200009 (has no name): ()  1x1+-1+-1  +-1+-1
+     0x200003 "app": ("app" "App")  800x600+0+0  +0+0
+        1 child:
+        0x200004 (has no name): ()  1x1+-1+-1  +-1+-1
+     0x200001 "app": ("app" "App")  10x10+10+10  +10+10
+
+
+=== xprop overlay window (0x200021, title 'Tauri App', suy ra la subtitle_overlay vi main co title 'app' theo config) ===
+_NET_WM_STATE:  not found.
+_MOTIF_WM_HINTS(_MOTIF_WM_HINTS) = 0x2, 0x0, 0x0, 0x0, 0x0
+WM_NAME(STRING) = "Tauri App"
+
+=== xprop main window (0x200003, title 'app') ===
+_NET_WM_STATE:  not found.
+_MOTIF_WM_HINTS:  not found.
+WM_NAME(STRING) = "app"
