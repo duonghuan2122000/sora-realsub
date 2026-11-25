@@ -27,5 +27,26 @@ sources: [docs/tech-stack.md]
 - **Ghi chú phụ (Windows MAX_PATH)**: build CTranslate2 + `ruy` tạo path build rất dài, dễ vượt 260 ký tự → lỗi MSBuild `MSB3501`. Fix bằng `CARGO_TARGET_DIR` ngắn.
 - **Áp dụng cho tương lai**: trước khi thêm bất kỳ crate binding C++ native nào (nhận diện qua có `build.rs` gọi `cmake`), phải thử `cargo build`/`cargo test` thật (không chỉ `cargo check`, vì `cargo check` không link nên không phát hiện được xung đột này) trong project đã có `ort`. Nếu xung đột, tách crate đó ra 1 Cargo package riêng (không chỉ 1 module/`[[bin]]` trong cùng package — `[[bin]]` cùng package vẫn ổn nếu bin đó không bị lib khác trong cùng package kéo theo, nhưng an toàn nhất là package riêng) và gọi qua `std::process::Command` (kiến trúc sidecar).
 
+## Dependency Windows-only không gate theo target — chặn build/test trên Linux (phát hiện ở PBI 17)
+- `wasapi = "0.26"` trong `app/src-tauri/Cargo.toml` (từ [[PBI-6-capture-loopback-wasapi]], M1)
+  là dependency **vô điều kiện** (không `[target.'cfg(windows)'.dependencies]`), dù bản thân
+  crate `wasapi` chỉ build được trên Windows. Trên Linux, build kéo theo `windows` → crate
+  `windows-future` lỗi compile `E0425` (`cannot find type IMarshal in module windows_core::imp`,
+  `cannot find function submit in crate windows_threading`) — tổ hợp version hiện tại trên
+  crates.io của `windows`/`windows-future`/`windows-core` không build được khi chỉ *resolve* cho
+  target Linux (dù không có ý định chạy thật trên Linux).
+- **Hệ quả**: `cargo build`/`cargo test -p app` **không chạy được trên container Linux**, bất kể
+  PBI đang làm có liên quan tới audio/Windows hay không — ví dụ PBI 17 (dịch có ngữ cảnh, thuần
+  logic Rust, không đụng audio) vẫn bị chặn hoàn toàn. Xem [[PBI-17-dich-co-ngu-canh]] để biết
+  cách lách tạm (sao logic thuần ra crate scratch riêng để vẫn có `cargo test` thật) — không phải
+  giải pháp lâu dài.
+- **Giải pháp đúng (chưa làm, đề xuất PBI riêng)**: gate `wasapi` bằng
+  `[target.'cfg(windows)'.dependencies]` trong `Cargo.toml`, và gate `mod loopback_audio_source`
+  + mọi nơi dùng `LoopbackAudioSource` (`lib.rs`, `src/bin/capture_loopback_to_wav.rs`,
+  `src/bin/capture_mixed_to_wav.rs`) bằng `#[cfg(windows)]`. Đã thử tạm (PBI 17, không commit) —
+  xác nhận hướng đi đúng (build tiến xa hơn qua đúng điểm này) nhưng cần sửa nhiều điểm gọi
+  (`lib.rs`, 2 file `src/bin/`), không chỉ 1 dòng — nên làm có kế hoạch riêng, không tiện làm
+  "tạm" trong một PBI không liên quan audio.
+
 ## Liên quan
-[[Tong-quan-du-an]], [[Pipeline-xu-ly-audio]], [[PBI-16-dich-local-sidecar]], [[PBI-9-vad-silero]]
+[[Tong-quan-du-an]], [[Pipeline-xu-ly-audio]], [[PBI-16-dich-local-sidecar]], [[PBI-9-vad-silero]], [[PBI-6-capture-loopback-wasapi]], [[PBI-17-dich-co-ngu-canh]]
