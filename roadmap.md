@@ -69,5 +69,6 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 ## Backlog (chưa ưu tiên, cần quyết định thêm)
 
 - [ ] Hỗ trợ macOS (BlackHole/ScreenCaptureKit cho loopback)
+- [ ] Hỗ trợ Linux (loopback qua PulseAudio/PipeWire monitor source thay cho `wasapi`; trước mắt cần gate dependency `wasapi` theo `cfg(windows)` trong `Cargo.toml`/`core/mod.rs` để `cargo build`/`cargo test` chạy được trên Linux — xem `wiki/pages/Rui-ro-ky-thuat.md` mục "Dependency Windows-only không gate theo target")
 - [ ] Đa ngôn ngữ UI (i18n)
 - [ ] Theme/style tùy biến cửa sổ phụ đề theo style-guide token
