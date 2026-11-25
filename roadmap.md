@@ -6,7 +6,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 
 ## M0 — Quyết định nền tảng
 
-- [x] Chốt OS mục tiêu (Windows trước, macOS sau hay song song)
+- [x] Chốt OS mục tiêu (ban đầu: Windows trước, macOS sau — **cập nhật**: hỗ trợ **Windows + Linux song song**, macOS vẫn để sau; xem mục Linux đã chuyển lên M1)
 - [x] Chốt cặp ngôn ngữ mặc định (ví dụ English → Vietnamese)
 - [x] Chốt hướng xử lý: local (ảnh hưởng trait STT, Translator)
 - [x] Định nghĩa trait Core: `AudioSource`, `SpeechToText`, `Translator`, `SubtitleSink` (chỉ interface, chưa implement)
@@ -18,6 +18,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 - [x] Capture loopback âm thanh hệ thống trên Windows (WASAPI loopback), test ghi ra .wav
 - [x] Trộn (mix) mic + loopback thành 1 stream, test so khớp cả 2 nguồn nghe được trong file output
 - [x] Command Tauri `start_capture` / `stop_capture`, test start/stop không leak thread/handle
+- [ ] **Hỗ trợ Linux song song với Windows**: gate dependency `wasapi` theo `cfg(windows)` trong `Cargo.toml`/`core/mod.rs` (để `cargo build`/`cargo test` chạy được trên Linux — xem `wiki/pages/Rui-ro-ky-thuat.md`), implement capture loopback trên Linux qua PulseAudio/PipeWire monitor source (tương đương `LoopbackAudioSource` cho Windows), test ghi ra .wav trên cả 2 OS
 
 ## M2 — VAD (Voice Activity Detection)
 
@@ -63,7 +64,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 ## M8 — Hoàn thiện & đóng gói
 
 - [ ] Xử lý lỗi toàn cục (crash audio device, mất mạng) hiển thị thông báo thân thiện cho user, test các case lỗi đã liệt kê
-- [ ] Đóng gói installer Windows (Tauri bundler), test cài trên máy sạch chạy được
+- [ ] Đóng gói installer Windows + Linux (Tauri bundler: MSI/NSIS cho Windows, AppImage/.deb cho Linux), test cài trên máy sạch chạy được cho cả 2 OS
 - [ ] Viết tài liệu hướng dẫn sử dụng cơ bản (README) cho người dùng cuối
 
 ## Backlog (chưa ưu tiên, cần quyết định thêm)
