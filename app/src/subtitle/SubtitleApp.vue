@@ -34,7 +34,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="subtitle-overlay">
+  <div class="subtitle-overlay" data-tauri-drag-region>
     <p
       v-for="(line, idx) in lines"
       :key="line.id"
