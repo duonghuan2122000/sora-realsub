@@ -1,0 +1,72 @@
+
+running 67 tests
+test core::audio_source::tests::doi_cai_dat_khong_can_sua_code_goi ... ok
+test core::audio_source::tests::mock_noise_phat_ra_nhieu ... ok
+test core::capture_session::tests::lap_10_lan_start_stop_khong_leak_handle ... ok
+test core::capture_session::tests::start_that_bai_khi_da_co_phien_dang_chay ... ok
+test core::audio_source::tests::mock_silent_phat_ra_im_lang ... ok
+test core::capture_session::tests::start_thanh_cong_khi_chua_co_phien ... ok
+test core::capture_session::tests::stop_thanh_cong_giai_phong_handle ... ok
+test core::capture_session::tests::stop_that_bai_khi_chua_co_phien ... ok
+test core::devices::tests::host_loi_tra_ve_coreerror_ro_nghia ... ok
+test core::devices::tests::co_thiet_bi_tra_dung_danh_sach_va_danh_dau_mac_dinh ... ok
+test core::devices::tests::khong_co_thiet_bi_tra_danh_sach_rong ... ok
+test core::devices::tests::thiet_bi_ten_rong_hien_thi_ten_thay_the ... ok
+test core::loopback_audio_source_linux::tests::stop_tren_handle_khong_panic_va_dung_nhan_mau ... ok
+test core::mixed_audio_source::tests::resample_linear_doi_do_dai_khi_rate_khac_nhau ... ok
+test core::mixed_audio_source::tests::resample_linear_giu_nguyen_khi_cung_rate ... ok
+test core::mic_audio_source::tests::stop_tren_handle_khong_panic_va_dung_nhan_mau ... ok
+test core::mic_audio_source::tests::thiet_bi_khong_ton_tai_tra_loi_ro_nghia ... ok
+test core::segment::tests::all_silence_returns_empty_segments ... ok
+test core::segment::tests::empty_labels_returns_empty_segments ... ok
+test core::segment::tests::long_silence_gap_splits_into_two_segments ... ok
+test core::segment::tests::open_segment_at_end_of_stream_is_still_returned ... ok
+test core::segment::tests::short_silence_gap_does_not_split_segment ... ok
+test core::segment::tests::single_speech_frame_is_a_valid_segment ... ok
+test core::speech_to_text::tests::goi_qua_trait_object_khong_biet_cai_dat_cu_the ... ok
+test core::speech_to_text::tests::nap_model_duong_dan_khong_ton_tai_tra_loi ... ok
+test core::speech_to_text::tests::tra_ve_partial_roi_final ... ok
+test core::subtitle_sink::tests::nhan_dung_du_lieu_subtitle ... ok
+test core::transcript_pipeline::tests::danh_sach_rong_khong_goi_callback ... ok
+test core::transcript_pipeline::tests::danh_sach_segment_rong_tra_ve_rong_khong_loi ... ok
+test core::transcript_pipeline::tests::loi_infer_1_segment_khong_lam_dung_cac_segment_khac ... ok
+test core::transcript_pipeline::tests::nhieu_segment_lien_tiep_loi_infer_khong_panic ... ok
+test core::transcript_pipeline::tests::nhieu_segment_tra_ve_text_dung_thu_tu ... ok
+test core::transcript_pipeline::tests::partial_den_truoc_final_cung_segment ... ok
+test core::transcript_pipeline::tests::phat_transcript_final_dung_thu_tu ... ok
+test core::translator::tests::dich_cau_co_dinh_dung_nghia_va_on_dinh ... ignored, cần sidecar dịch + model local open-source (Marian-MT opus-mt-en-vi) cục bộ — xem quickstart.md
+test core::translator::tests::dich_co_ngu_canh_dai_tu_dich_dung_hon ... ignored, cần sidecar dịch + model local open-source (Marian-MT opus-mt-en-vi) cục bộ — xem quickstart.md
+test core::translator::tests::dich_kem_ngu_canh ... ok
+test core::translator::tests::ghep_ngu_canh_va_tach_dung_cau_hien_tai ... ok
+test core::translator::tests::goi_qua_trait_object ... ok
+test core::translator::tests::input_rong_tra_ve_rong_khong_spawn_tien_trinh ... ok
+test core::translator::tests::normalize_context_gioi_han_toi_da_2_cau ... ok
+test core::translator::tests::normalize_context_loai_cau_rong ... ok
+test core::translator::tests::normalize_context_on_dinh_giua_cac_lan_goi ... ok
+test core::translator::tests::normalize_context_rong_tra_ve_rong ... ok
+test core::translator::tests::recent_transcript_context_giu_toi_da_2_cau_gan_nhat ... ok
+test core::translator::tests::sidecar_khong_ton_tai_tra_loi ... ok
+test core::translator::tests::tach_cau_khong_khop_tra_ve_none_de_fallback ... ok
+test core::translator::tests::tach_cau_khop_tra_ve_dung_cau_cuoi ... ok
+test core::vad::tests::buffer_shorter_than_one_frame_returns_empty_labels ... ok
+test core::vad::tests::empty_buffer_returns_empty_labels ... ok
+test core::mixed_audio_source::tests::stop_khong_panic_va_dung_nhan_mau_moi ... ok
+test core::mixed_audio_source::tests::mot_nguon_im_lang_output_khop_nguon_con_lai ... ok
+test core::vad_pipeline::tests::hai_segment_dong_het_khi_lang_du_nguong_sau_segment_thu_hai ... ok
+test core::vad_pipeline::tests::khong_co_segment_nao_tra_ve_0 ... ok
+test core::mixed_audio_source::tests::tron_hai_nguon_cung_co_tieng_cho_ra_tong_co_clamp ... ok
+test core::vad_pipeline::tests::lang_chua_du_nguong_segment_cuoi_van_mo ... ok
+test core::vad_pipeline::tests::nhan_cuoi_la_speech_segment_cuoi_van_mo ... ok
+test core::vad_pipeline::tests::lang_du_nguong_segment_da_dong ... ok
+test core::vad_pipeline::tests::slice_samples_cat_dung_khoang_theo_vad_chunk_size ... ok
+test tests::cau_final_sau_nhan_dung_toi_da_2_cau_context_gan_nhat ... ok
+test tests::chunk_final_rong_khong_goi_dich_khong_phat_subtitle_khong_push_context ... ok
+test tests::chunk_partial_khong_goi_dich_khong_phat_subtitle ... ok
+test tests::greet_returns_greeting_with_name ... ok
+test tests::loi_dich_1_cau_khong_lam_dung_cac_cau_khac ... ok
+test tests::nhieu_cau_final_phat_subtitle_dung_thu_tu ... ok
+test core::vad::tests::labels_keep_original_frame_order ... ok
+test core::vad::tests::pure_silence_is_labeled_silence ... ok
+
+test result: ok. 65 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.10s
+

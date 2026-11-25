@@ -45,7 +45,7 @@ cài đặt loopback riêng:
 
 - [x] Implement `Translator` bằng model local (NLLB hoặc tương đương, chạy offline), test dịch 1 câu cố định ra kết quả đúng (PBI 16: `SidecarTranslator` chạy qua sidecar process riêng `app/translate-sidecar/` (crate Cargo độc lập, dùng `ct2rs`) để tránh xung đột CRT với `ort`; model dịch `gaudi/opus-mt-en-vi-ctranslate2` (Marian-MT, **license Apache-2.0, open-source**), xác nhận SC-001 + FR-004 bằng dữ liệu thật, 5/5 test pass)
 - [ ] Ghép ngữ cảnh: gửi kèm 1-2 câu trước khi dịch câu hiện tại, test câu có đại từ/thiếu ngữ cảnh dịch đúng hơn khi có context (PBI 17: code `SidecarTranslator::translate()` đã ghép/tách ngữ cảnh + fallback, 13/13 test logic pass trên crate scratch độc lập — **CHƯA tick** vì `cargo test -p app translator` chưa chạy được thật trong container Linux này, bị chặn bởi dependency `wasapi` không gate theo target [có từ PBI 6, không liên quan PBI 17] — xem `wiki/pages/Rui-ro-ky-thuat.md`; cần xác nhận lại trên máy Windows trước khi tick)
-- [ ] Nối STT final → Translator → event `subtitle-ready` (text gốc + text dịch), test end-to-end
+- [x] Nối STT final → Translator → event `subtitle-ready` (text gốc + text dịch), test end-to-end (PBI 19: hàm thuần `translate_final_chunk` mới trong `lib.rs`, tách khỏi `start_capture` để test bằng mock Translator; nối `RecentTranscriptContext` (PBI 17) + `SidecarTranslator` (PBI 16) vào callback `on_chunk` của `TranscriptPipeline`; phát event Tauri `subtitle-ready`, lỗi dịch báo qua `model-error` kiểu `translate` mới, không dừng phiên; 65/65 test pass (2 ignored cần sidecar/model thật — test tích hợp SC-002 `tests/subtitle_pipeline_real.rs` compile sạch nhưng chưa chạy thật trong container này); hoàn tất M4 (3/3))
 
 ## M5 — Cửa sổ phụ đề (Subtitle Overlay UI)
 

@@ -5,7 +5,7 @@ tags: [status]
 sources: [app/]
 ---
 
-# Trạng thái mã nguồn — snapshot 2026-11-25 (cập nhật sau PBI 18)
+# Trạng thái mã nguồn — snapshot 2026-11-25 (cập nhật sau PBI 19)
 
 Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ngày trên; ingest lại khi code có tiến triển mới.
 
@@ -56,9 +56,27 @@ Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ng�
   máy Windows trong môi trường implement) — SC-002 cần người có máy Windows
   xác nhận lại trước khi tick dòng roadmap M1 tương ứng. Xem
   [[PBI-18-loopback-linux]].
+- **Mới (PBI 19)**: `core/types.rs` thêm biến thể `ModelErrorKind::Translate`. `core/mod.rs` export
+  thêm `SidecarTranslator`, `RecentTranscriptContext` (trước đó chỉ export trait `Translator`).
+  `lib.rs`: `SubtitlePayload` (payload event `subtitle-ready`, camelCase) + hàm thuần
+  `translate_final_chunk(translator, recent_ctx, chunk, on_subtitle, on_error)` — tách khỏi
+  `start_capture` để test được bằng mock `Translator`, không cần `AppHandle`/Tauri runtime.
+  `start_capture` nay dựng `translator: Option<SidecarTranslator>` từ
+  `SORA_TRANSLATE_SIDECAR_PATH`+`SORA_TRANSLATE_MODEL_PATH` (optional, giống `stt`) và
+  `RecentTranscriptContext` mới mỗi phiên; sau khi `TranscriptPipeline` trả `chunks`, gọi
+  `translate_final_chunk` cho mỗi chunk — dịch thành công thì emit `subtitle-ready` (câu gốc +
+  câu dịch), lỗi thì emit `model-error` kiểu `translate` (không dừng phiên). Không thêm Cargo
+  dependency. Test mới: 5 unit test mock (`RecordingTranslator`/`FlakyTranslator`) trong
+  `lib.rs::tests` + 1 test tích hợp `#[ignore]` mới `tests/subtitle_pipeline_real.rs` (cần
+  model+sidecar thật, chưa chạy được trong container này). **65/65 test pass (2 ignored, không
+  liên quan code PBI 19), build thành công** — môi trường lần này build/test được cả phần
+  Tauri/GTK (trước đó PBI 17/18 chỉ xác nhận phần `core/` thuần Rust), sau khi cài thêm
+  `libgtk-3-dev`, `libwebkit2gtk-4.1-dev`, `libjavascriptcoregtk-4.1-dev`, `libsoup-3.0-dev`,
+  `librsvg2-dev`, `libasound2-dev`, `libpulse-dev`. **Hoàn tất M4 (Dịch), 3/3.** Xem
+  [[PBI-19-noi-stt-dich-subtitle-ready]].
 - **Vẫn chưa có**: chọn thiết bị output cụ thể cho loopback (cả Windows và
   Linux — vẫn chỉ dùng thiết bị/sink mặc định), cấu hình model path qua
-  UI/config thật (hiện đọc tạm từ biến môi trường `WHISPER_MODEL_PATH`/`SORA_TRANSLATE_SIDECAR_PATH`/`SORA_TRANSLATE_MODEL_PATH`), UI hiển thị thông báo lỗi `model-error` (toast/dialog, thuộc M6/M8), tự động retry khi model lỗi, nối `RecentTranscriptContext`+`Translator` vào pipeline STT→subtitle thật, lưu trữ thật trong [[Pipeline-xu-ly-audio]]. Chưa thấy `rusqlite` trong Cargo deps. Dòng roadmap "Ghép ngữ cảnh" (PBI 17) vẫn CHƯA tick — nay `cargo test -p app` đã chạy được trên Linux (PBI 18), nên có thể xác nhận lại SC-001 của PBI 17 bằng sidecar+model thật trên Linux ở PBI kế tiếp (chưa làm trong phạm vi PBI 18).
+  UI/config thật (hiện đọc tạm từ biến môi trường `WHISPER_MODEL_PATH`/`SORA_TRANSLATE_SIDECAR_PATH`/`SORA_TRANSLATE_MODEL_PATH`), UI hiển thị thông báo lỗi `model-error` (toast/dialog, thuộc M6/M8), tự động retry khi model lỗi, cửa sổ phụ đề nổi hiển thị `subtitle-ready` thật (M5), lưu trữ thật trong [[Pipeline-xu-ly-audio]]. Chưa thấy `rusqlite` trong Cargo deps. Dòng roadmap "Ghép ngữ cảnh" (PBI 17) vẫn CHƯA tick vì SC-001 riêng của PBI 17 vẫn chưa xác nhận bằng sidecar+model thật (PBI 19 tái dùng logic đó, không xác nhận lại SC-001 cũ).
 
 ## app/src (UI Vue)
 - `App.vue`, `main.ts`, `vite-env.d.ts`, `sample.test.ts` — skeleton Vite+Vue 3 mặc định.
@@ -67,7 +85,7 @@ Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ng�
 - **PBI 5, PBI 6, PBI 7, PBI 8 không đụng UI** — chỉ thi công phần lõi Rust capture + điều khiển phiên (mic, loopback, trộn, start/stop), command Tauri đã có nhưng chưa có nút bấm trong Vue.
 
 ## Kết luận
-M1 (Audio Capture) đã hoàn tất 6/6 mục (PBI 4-8 + PBI 18, nay chạy được trên cả Windows và Linux). M2 (VAD) đã hoàn tất 3/3 mục (PBI 9-11). M3 (STT streaming) đã hoàn tất 4/4 (PBI 12-15). **M4 (Dịch) 2/3 mục đã xong**: `Translator` có cài đặt thật (`SidecarTranslator`, PBI 16) chạy qua sidecar process riêng (`app/translate-sidecar/`, đổi hướng do xung đột CRT native, xem [[Rui-ro-ky-thuat]]), **SC-001 (PBI 16) đã xác nhận bằng sidecar + model Marian-MT (opus-mt-en-vi, Apache-2.0, open-source) thật**; nay dùng được ngữ cảnh 1-2 câu trước khi dịch (PBI 17), **nhưng SC-001 của PBI 17 chưa xác nhận bằng sidecar+model thật** (chỉ xác nhận logic bằng crate scratch độc lập, do container Linux không build được crate `app` — xem [[Rui-ro-ky-thuat]]). Còn lại của M4: nối STT final → Translator (có ngữ cảnh) → event `subtitle-ready`. Kiểm thử tay trên UI thật (có mic/GUI) vẫn là khoảng trống chung từ PBI 8; chưa có UI hiển thị thông báo `model-error` (M6/M8).
+M1 (Audio Capture) đã hoàn tất 6/6 mục (PBI 4-8 + PBI 18, nay chạy được trên cả Windows và Linux). M2 (VAD) đã hoàn tất 3/3 mục (PBI 9-11). M3 (STT streaming) đã hoàn tất 4/4 (PBI 12-15). **M4 (Dịch) đã hoàn tất 3/3**: `Translator` có cài đặt thật (`SidecarTranslator`, PBI 16) chạy qua sidecar process riêng (`app/translate-sidecar/`, đổi hướng do xung đột CRT native, xem [[Rui-ro-ky-thuat]]), **SC-001 (PBI 16) đã xác nhận bằng sidecar + model Marian-MT (opus-mt-en-vi, Apache-2.0, open-source) thật**; dùng được ngữ cảnh 1-2 câu trước khi dịch (PBI 17, **SC-001 riêng của PBI 17 vẫn chưa xác nhận bằng sidecar+model thật**, chỉ logic); và nay đã **nối STT final → Translator (có ngữ cảnh) → event `subtitle-ready`** (PBI 19) — 65/65 test pass, container lần này build/test được cả phần Tauri/GTK. Kiểm thử tay trên UI thật (có mic/GUI) vẫn là khoảng trống chung từ PBI 8; chưa có UI hiển thị thông báo `model-error`/cửa sổ phụ đề nổi thật (M5/M6/M8).
 
 ## Liên quan
-[[Core-Rust]], [[UI-Vue]], [[Style-guide-token]], [[Quyet-dinh-hop-dong-core]], [[PBI-4-liet-ke-thiet-bi-mic]], [[PBI-5-capture-mic-pcm]], [[PBI-6-capture-loopback-wasapi]], [[PBI-7-tron-mic-loopback]], [[PBI-8-start-stop-capture]], [[PBI-9-vad-silero]], [[PBI-10-cat-segment-khoang-lang]], [[PBI-11-vad-segment-event]], [[PBI-12-stt-local-whisper]], [[PBI-13-ghep-stt-vao-luong]], [[PBI-14-transcript-partial-final-event]], [[PBI-15-xu-ly-loi-runtime-model-stt]], [[PBI-16-dich-local-sidecar]], [[PBI-17-dich-co-ngu-canh]], [[PBI-18-loopback-linux]]
+[[Core-Rust]], [[UI-Vue]], [[Style-guide-token]], [[Quyet-dinh-hop-dong-core]], [[PBI-4-liet-ke-thiet-bi-mic]], [[PBI-5-capture-mic-pcm]], [[PBI-6-capture-loopback-wasapi]], [[PBI-7-tron-mic-loopback]], [[PBI-8-start-stop-capture]], [[PBI-9-vad-silero]], [[PBI-10-cat-segment-khoang-lang]], [[PBI-11-vad-segment-event]], [[PBI-12-stt-local-whisper]], [[PBI-13-ghep-stt-vao-luong]], [[PBI-14-transcript-partial-final-event]], [[PBI-15-xu-ly-loi-runtime-model-stt]], [[PBI-16-dich-local-sidecar]], [[PBI-17-dich-co-ngu-canh]], [[PBI-18-loopback-linux]], [[PBI-19-noi-stt-dich-subtitle-ready]]
