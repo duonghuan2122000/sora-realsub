@@ -6,7 +6,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 
 ## M0 — Quyết định nền tảng
 
-- [x] Chốt OS mục tiêu (ban đầu: Windows trước, macOS sau — **cập nhật**: hỗ trợ **Windows + Linux song song**, macOS vẫn để sau; xem mục Linux đã chuyển lên M1)
+- [x] Chốt OS mục tiêu (ban đầu: Windows trước, macOS sau — **cập nhật**: hỗ trợ **Windows + Linux song song**, macOS vẫn để sau; các mục khác nhau theo OS được tách riêng trong từng milestone, ví dụ mục "Capture loopback hệ thống — theo OS" ở M1)
 - [x] Chốt cặp ngôn ngữ mặc định (ví dụ English → Vietnamese)
 - [x] Chốt hướng xử lý: local (ảnh hưởng trait STT, Translator)
 - [x] Định nghĩa trait Core: `AudioSource`, `SpeechToText`, `Translator`, `SubtitleSink` (chỉ interface, chưa implement)
@@ -15,10 +15,18 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 
 - [x] Liệt kê thiết bị audio input (mic) qua Tauri command, trả về UI
 - [x] Capture mic thành PCM buffer (Rust), test bằng ghi ra file .wav
-- [x] Capture loopback âm thanh hệ thống trên Windows (WASAPI loopback), test ghi ra .wav
 - [x] Trộn (mix) mic + loopback thành 1 stream, test so khớp cả 2 nguồn nghe được trong file output
 - [x] Command Tauri `start_capture` / `stop_capture`, test start/stop không leak thread/handle
-- [ ] **Hỗ trợ Linux song song với Windows**: gate dependency `wasapi` theo `cfg(windows)` trong `Cargo.toml`/`core/mod.rs` (để `cargo build`/`cargo test` chạy được trên Linux — xem `wiki/pages/Rui-ro-ky-thuat.md`), implement capture loopback trên Linux qua PulseAudio/PipeWire monitor source (tương đương `LoopbackAudioSource` cho Windows), test ghi ra .wav trên cả 2 OS (PBI 18: đã làm xong + test pass trên **Linux** — `cargo build`/`cargo test` chạy được, capture loopback thật xác nhận bằng PulseAudio + tone test 440Hz ghi đúng ra .wav; xem `wiki/pages/PBI-18-loopback-linux.md`. **Chưa tick** vì chưa xác nhận lại bằng test .wav thật trên **Windows** — không có máy Windows trong môi trường implement; code Windows chỉ thêm `#[cfg(windows)]` bọc ngoài, logic cũ không đổi, nhưng cần người có máy Windows chạy lại `cargo test`/`capture_loopback_to_wav` để xác nhận 0 regression trước khi tick dòng này)
+
+### Capture loopback hệ thống — theo OS
+
+Dùng chung trait `AudioSource` (gate theo `cfg(windows)`/`cfg(target_os = "linux")`
+trong `Cargo.toml`/`core/mod.rs`, xem `wiki/pages/Rui-ro-ky-thuat.md`), mỗi OS có
+cài đặt loopback riêng:
+
+- [x] **Windows**: capture loopback qua WASAPI loopback (crate `wasapi`), test ghi ra .wav (PBI 6)
+- [ ] **Linux**: capture loopback qua PulseAudio/PipeWire monitor source (`libpulse-binding`, `@DEFAULT_MONITOR@`), test ghi ra .wav (PBI 18: đã làm xong + test pass — `cargo build`/`cargo test` chạy được trên Linux, capture loopback thật xác nhận bằng PulseAudio + tone test 440Hz ghi đúng ra .wav; xem `wiki/pages/PBI-18-loopback-linux.md`. **Chưa tick** vì chỉ xác nhận trên máy Linux dùng để implement — cần người có máy Linux khác (distro/cấu hình PulseAudio hoặc PipeWire khác) xác nhận lại trước khi tick)
+- [ ] **Windows (regression sau PBI 18)**: xác nhận lại `cargo test`/`capture_loopback_to_wav` trên Windows thật không đổi hành vi so với trước PBI 18 (code chỉ thêm `#[cfg(windows)]` bọc ngoài, logic không đổi, nhưng chưa có máy Windows trong môi trường implement để chạy lại) — chỉ tick khi đã xác nhận 0 regression
 
 ## M2 — VAD (Voice Activity Detection)
 
@@ -64,7 +72,12 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 ## M8 — Hoàn thiện & đóng gói
 
 - [ ] Xử lý lỗi toàn cục (crash audio device, mất mạng) hiển thị thông báo thân thiện cho user, test các case lỗi đã liệt kê
-- [ ] Đóng gói installer Windows + Linux (Tauri bundler: MSI/NSIS cho Windows, AppImage/.deb cho Linux), test cài trên máy sạch chạy được cho cả 2 OS
+
+### Đóng gói installer — theo OS
+
+- [ ] **Windows**: đóng gói installer qua Tauri bundler (MSI/NSIS), test cài trên máy sạch chạy được
+- [ ] **Linux**: đóng gói installer qua Tauri bundler (AppImage/.deb), test cài trên máy sạch chạy được
+
 - [ ] Viết tài liệu hướng dẫn sử dụng cơ bản (README) cho người dùng cuối
 
 ## Backlog (chưa ưu tiên, cần quyết định thêm)
