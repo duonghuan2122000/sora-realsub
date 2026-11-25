@@ -1,0 +1,10 @@
+$ vitest run
+
+ RUN  v5.1.1 C:/work/dbhuan/sora-realsub/app
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  21:19:25
+   Duration  1.23s (environment 89%, import 7%, tests 3%, transform 1%)
+

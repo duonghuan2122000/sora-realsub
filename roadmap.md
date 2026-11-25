@@ -52,7 +52,7 @@ cài đặt loopback riêng:
 - [x] Tạo window Tauri riêng, always-on-top, không có border/title bar (PBI 20: `create_subtitle_window()` trong `lib.rs` + entry point `subtitle.html`; SC-001 + SC-002 đã xác nhận trực tiếp bởi người dùng trên máy Windows thật qua `bun run tauri dev`, xem `.specify/specs/20/evidence/T005-testcase.md`)
 - [x] Hiển thị text phụ đề nhận từ event `subtitle-ready`, test hiển thị đúng khi có event liên tục (PBI 21: `SubtitleApp.vue` subscribe event qua `listen`, hiển thị `translatedText` mới nhất, test Vue đầu tiên của dự án, 8/8 test pass, xem `wiki/pages/PBI-21-hien-thi-phu-de.md`)
 - [x] Auto-scroll/fade dòng cũ khi có dòng mới, test với nhiều dòng liên tiếp (PBI 22: `SubtitleApp.vue` giữ N=3 dòng gần nhất qua `lines: Ref<SubtitleLine[]>`, cuộn + mờ dần CSS `opacity` theo class `--age-0/1/2`, không thêm dependency, 5/5 test pass — xem `wiki/pages/PBI-22-auto-scroll-fade-phu-de.md`)
-- [ ] Cho phép kéo-thả di chuyển vị trí cửa sổ, test vị trí được giữ sau khi thả
+- [x] Cho phép kéo-thả di chuyển vị trí cửa sổ, test vị trí được giữ sau khi thả (PBI 23: `data-tauri-drag-region` + capability `core:window:allow-start-dragging` riêng cho window `subtitle`, xác nhận PASS trên Windows thật)
 - [ ] Cho phép resize / chỉnh cỡ chữ, test lưu lại cỡ chữ sau khi đóng-mở app
 - [ ] Nút/phím tắt ẩn-hiện cửa sổ phụ đề, test toggle hoạt động đúng
 

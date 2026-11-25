@@ -92,4 +92,9 @@ describe('SubtitleApp', () => {
 
     expect(wrapper.find('.subtitle-text').exists()).toBe(false)
   })
+
+  it('vùng gốc cửa sổ có data-tauri-drag-region để kéo-thả được (PBI 23)', () => {
+    const wrapper = mount(SubtitleApp)
+    expect(wrapper.find('.subtitle-overlay').attributes('data-tauri-drag-region')).toBeDefined()
+  })
 })

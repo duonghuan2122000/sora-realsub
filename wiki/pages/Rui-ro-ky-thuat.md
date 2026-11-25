@@ -55,5 +55,13 @@ không cần sửa vì chỉ gọi qua trait `AudioSource`, không có code riê
   (`lib.rs`, 2 file `src/bin/`), không chỉ 1 dòng — nên làm có kế hoạch riêng, không tiện làm
   "tạm" trong một PBI không liên quan audio.
 
+## Capability Tauri 2 không tự kế thừa giữa các window (phát hiện ở PBI 23)
+
+- Mỗi file `app/src-tauri/capabilities/*.json` khai báo `windows: [...]` — chỉ các window có tên nằm trong danh sách đó mới được cấp các `permissions` trong file. `default.json` (tạo sẵn bởi `create-tauri-app`) chỉ có `windows: ["main"]`.
+- Khi PBI 20 tạo window thứ hai `"subtitle"` (`create_subtitle_window`), window này **không có bất kỳ capability nào** — mọi permission (kể cả `core:default`) không tự áp dụng sang nó.
+- Hệ quả cụ thể (PBI 23): thuộc tính `data-tauri-drag-region` gọi ngầm command `core:window:allow-start-dragging`; vì window `subtitle` không có capability chứa permission này, lệnh kéo **bị ACL chặn âm thầm** — không có lỗi/log, chỉ đơn giản là không kéo được. Dễ nhầm là bug CSS/JS.
+- **Fix**: thêm file capability riêng cho window đó, ví dụ `app/src-tauri/capabilities/subtitle.json` với `windows: ["subtitle"]` + đúng permission cần.
+- **Áp dụng cho tương lai**: mọi window mới tạo (ngoài `main`) muốn dùng bất kỳ Tauri API nào (kéo-thả, resize, invoke command, event...) phải có capability riêng khai báo đúng tên window đó — không giả định nó kế thừa `default.json`. Kiểm tra `app/src-tauri/gen/schemas/acl-manifests.json` để tìm đúng tên permission identifier khi không chắc (ví dụ `core:window:allow-start-dragging`).
+
 ## Liên quan
-[[Tong-quan-du-an]], [[Pipeline-xu-ly-audio]], [[PBI-16-dich-local-sidecar]], [[PBI-9-vad-silero]], [[PBI-6-capture-loopback-wasapi]], [[PBI-17-dich-co-ngu-canh]]
+[[Tong-quan-du-an]], [[Pipeline-xu-ly-audio]], [[PBI-16-dich-local-sidecar]], [[PBI-9-vad-silero]], [[PBI-6-capture-loopback-wasapi]], [[PBI-17-dich-co-ngu-canh]], [[PBI-20-cua-so-phu-de-noi]], [[PBI-23-keo-tha-cua-so-phu-de]]
