@@ -53,7 +53,7 @@ cài đặt loopback riêng:
 - [x] Hiển thị text phụ đề nhận từ event `subtitle-ready`, test hiển thị đúng khi có event liên tục (PBI 21: `SubtitleApp.vue` subscribe event qua `listen`, hiển thị `translatedText` mới nhất, test Vue đầu tiên của dự án, 8/8 test pass, xem `wiki/pages/PBI-21-hien-thi-phu-de.md`)
 - [x] Auto-scroll/fade dòng cũ khi có dòng mới, test với nhiều dòng liên tiếp (PBI 22: `SubtitleApp.vue` giữ N=3 dòng gần nhất qua `lines: Ref<SubtitleLine[]>`, cuộn + mờ dần CSS `opacity` theo class `--age-0/1/2`, không thêm dependency, 5/5 test pass — xem `wiki/pages/PBI-22-auto-scroll-fade-phu-de.md`)
 - [x] Cho phép kéo-thả di chuyển vị trí cửa sổ, test vị trí được giữ sau khi thả (PBI 23: `data-tauri-drag-region` + capability `core:window:allow-start-dragging` riêng cho window `subtitle`, xác nhận PASS trên Windows thật)
-- [ ] Cho phép resize / chỉnh cỡ chữ, test lưu lại cỡ chữ sau khi đóng-mở app
+- [x] Cho phép resize / chỉnh cỡ chữ, test lưu lại cỡ chữ sau khi đóng-mở app (PBI 24: chỉnh cỡ chữ qua nút +/-, lưu/khôi phục qua `localStorage` webview; resize khung cửa sổ bằng kéo viền để ngoài phạm vi — cửa sổ không có border/title bar nên không áp dụng kiểu kéo-viền thông thường, xem `.specify/specs/24/spec.md`)
 - [ ] Nút/phím tắt ẩn-hiện cửa sổ phụ đề, test toggle hoạt động đúng
 
 ## M6 — Điều khiển & cấu hình (Control UI)

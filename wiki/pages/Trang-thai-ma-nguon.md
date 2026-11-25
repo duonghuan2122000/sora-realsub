@@ -5,7 +5,7 @@ tags: [status]
 sources: [app/]
 ---
 
-# Trạng thái mã nguồn — snapshot 2026-11-25 (cập nhật sau PBI 23)
+# Trạng thái mã nguồn — snapshot 2026-11-25 (cập nhật sau PBI 24)
 
 Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ngày trên; ingest lại khi code có tiến triển mới.
 
@@ -126,11 +126,25 @@ Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ng�
   Test mới xác nhận attribute tồn tại. 11/11 test pass. Test tay trên Windows thật: cần thêm
   capability Rust (`capabilities/subtitle.json`, xem mục Core Rust trên) mới kéo được — code UI
   một mình không đủ. **Hoàn tất mục 4/6 của M5.** Xem [[PBI-23-keo-tha-cua-so-phu-de]].
+- **Mới (PBI 24)**: `subtitle/SubtitleApp.vue` thêm state `fontSize` (ref, khởi tạo từ
+  `readStoredFontSize()` đọc + validate `localStorage['subtitle-font-size']`, fallback 1.5rem mặc
+  định nếu rỗng/NaN, clamp 1.0-3.0rem), hàm `increaseFontSize`/`decreaseFontSize` (bước 0.25rem,
+  ghi lại `localStorage` mỗi lần đổi), 2 nút `+`/`-` trong `data-tauri-drag-region="false"` (không
+  bị vùng kéo-thả PBI 23 nuốt click), bind `fontSize` vào `.subtitle-text` qua CSS variable
+  `--subtitle-font-size` (thay giá trị cứng `1.5rem` cũ). Không đụng `app/src-tauri` — không cần
+  Tauri command/IPC hay file config Rust, chỉ dùng `localStorage` webview (xem research.md: webview
+  tự persist qua app data dir giữa các lần mở app, giống browser thật). Test mới: 5 case (tăng/giảm,
+  clamp min/max, khôi phục từ localStorage hợp lệ, fallback khi hỏng, ghi lại localStorage). 16/16
+  test pass. Kiểm thử tay: container Linux không có máy Windows thật (lặp lại hạn chế PBI 18/20/23)
+  — dùng `bun run dev` (vite thuần) + Claude Browser pane mở `subtitle.html` trực tiếp (bỏ qua phần
+  `listen('subtitle-ready')` vì thiếu IPC Tauri) để xác nhận UI + persistence: tăng cỡ chữ 1.5→1.75rem,
+  reload giữ đúng 1.75rem. **Chưa xác nhận trên webview WebView2 Windows thật.** **Hoàn tất mục 5/6
+  của M5.** Xem [[PBI-24-chinh-co-chu-phu-de]].
 - Chưa có Pinia/vue-i18n/shadcn-vue/Lucide, chưa có `styles/tokens.scss` theo [[Style-guide-token]].
 - **PBI 5, PBI 6, PBI 7, PBI 8 không đụng UI** — chỉ thi công phần lõi Rust capture + điều khiển phiên (mic, loopback, trộn, start/stop), command Tauri đã có nhưng chưa có nút bấm trong Vue.
 
 ## Kết luận
-M1 (Audio Capture) đã hoàn tất 6/6 mục (PBI 4-8 + PBI 18, nay chạy được trên cả Windows và Linux). M2 (VAD) đã hoàn tất 3/3 mục (PBI 9-11). M3 (STT streaming) đã hoàn tất 4/4 (PBI 12-15). **M4 (Dịch) đã hoàn tất 3/3**: `Translator` có cài đặt thật (`SidecarTranslator`, PBI 16) chạy qua sidecar process riêng (`app/translate-sidecar/`, đổi hướng do xung đột CRT native, xem [[Rui-ro-ky-thuat]]), **SC-001 (PBI 16) đã xác nhận bằng sidecar + model Marian-MT (opus-mt-en-vi, Apache-2.0, open-source) thật**; dùng được ngữ cảnh 1-2 câu trước khi dịch (PBI 17, **SC-001 riêng của PBI 17 vẫn chưa xác nhận bằng sidecar+model thật**, chỉ logic); và đã **nối STT final → Translator (có ngữ cảnh) → event `subtitle-ready`** (PBI 19) — 65/65 test pass, container lần này build/test được cả phần Tauri/GTK. **M5 (Cửa sổ phụ đề) đang tiến triển, 4/6 mục**: cửa sổ phụ đề always-on-top/không viền đã tạo và xác nhận PASS bằng GUI thật (PBI 20), hiển thị `translatedText` thật từ event `subtitle-ready` (PBI 21), giữ 3 dòng gần nhất có auto-scroll/fade (PBI 22), và nay **kéo-thả được bằng `data-tauri-drag-region` + capability riêng cho window `subtitle`** (PBI 23, xác nhận PASS trên Windows thật sau khi fix capability — xem [[Rui-ro-ky-thuat]]). Còn lại 2/6 mục M5: resize/cỡ chữ, ẩn-hiện phím tắt. Kiểm thử tay trên UI thật (có mic/GUI) vẫn là khoảng trống chung từ PBI 8 cho phần audio/STT/dịch; chưa có UI hiển thị thông báo `model-error` (M6/M8).
+M1 (Audio Capture) đã hoàn tất 6/6 mục (PBI 4-8 + PBI 18, nay chạy được trên cả Windows và Linux). M2 (VAD) đã hoàn tất 3/3 mục (PBI 9-11). M3 (STT streaming) đã hoàn tất 4/4 (PBI 12-15). **M4 (Dịch) đã hoàn tất 3/3**: `Translator` có cài đặt thật (`SidecarTranslator`, PBI 16) chạy qua sidecar process riêng (`app/translate-sidecar/`, đổi hướng do xung đột CRT native, xem [[Rui-ro-ky-thuat]]), **SC-001 (PBI 16) đã xác nhận bằng sidecar + model Marian-MT (opus-mt-en-vi, Apache-2.0, open-source) thật**; dùng được ngữ cảnh 1-2 câu trước khi dịch (PBI 17, **SC-001 riêng của PBI 17 vẫn chưa xác nhận bằng sidecar+model thật**, chỉ logic); và đã **nối STT final → Translator (có ngữ cảnh) → event `subtitle-ready`** (PBI 19) — 65/65 test pass, container lần này build/test được cả phần Tauri/GTK. **M5 (Cửa sổ phụ đề) đang tiến triển, 5/6 mục**: cửa sổ phụ đề always-on-top/không viền đã tạo và xác nhận PASS bằng GUI thật (PBI 20), hiển thị `translatedText` thật từ event `subtitle-ready` (PBI 21), giữ 3 dòng gần nhất có auto-scroll/fade (PBI 22), kéo-thả được bằng `data-tauri-drag-region` + capability riêng cho window `subtitle` (PBI 23), và nay **chỉnh được cỡ chữ qua nút +/- + lưu/khôi phục qua `localStorage` webview** (PBI 24, 16/16 test pass, kiểm thử tay qua Claude Browser pane xác nhận UI+persistence, **chưa xác nhận trên webview Windows thật**). Còn lại 1/6 mục M5: ẩn-hiện phím tắt. Kiểm thử tay trên UI thật (có mic/GUI) vẫn là khoảng trống chung từ PBI 8 cho phần audio/STT/dịch; chưa có UI hiển thị thông báo `model-error` (M6/M8).
 
 ## Liên quan
-[[Core-Rust]], [[UI-Vue]], [[Style-guide-token]], [[Quyet-dinh-hop-dong-core]], [[PBI-4-liet-ke-thiet-bi-mic]], [[PBI-5-capture-mic-pcm]], [[PBI-6-capture-loopback-wasapi]], [[PBI-7-tron-mic-loopback]], [[PBI-8-start-stop-capture]], [[PBI-9-vad-silero]], [[PBI-10-cat-segment-khoang-lang]], [[PBI-11-vad-segment-event]], [[PBI-12-stt-local-whisper]], [[PBI-13-ghep-stt-vao-luong]], [[PBI-14-transcript-partial-final-event]], [[PBI-15-xu-ly-loi-runtime-model-stt]], [[PBI-16-dich-local-sidecar]], [[PBI-17-dich-co-ngu-canh]], [[PBI-18-loopback-linux]], [[PBI-19-noi-stt-dich-subtitle-ready]], [[PBI-20-cua-so-phu-de-noi]], [[PBI-21-hien-thi-phu-de]], [[PBI-22-auto-scroll-fade-phu-de]], [[PBI-23-keo-tha-cua-so-phu-de]]
+[[Core-Rust]], [[UI-Vue]], [[Style-guide-token]], [[Quyet-dinh-hop-dong-core]], [[PBI-4-liet-ke-thiet-bi-mic]], [[PBI-5-capture-mic-pcm]], [[PBI-6-capture-loopback-wasapi]], [[PBI-7-tron-mic-loopback]], [[PBI-8-start-stop-capture]], [[PBI-9-vad-silero]], [[PBI-10-cat-segment-khoang-lang]], [[PBI-11-vad-segment-event]], [[PBI-12-stt-local-whisper]], [[PBI-13-ghep-stt-vao-luong]], [[PBI-14-transcript-partial-final-event]], [[PBI-15-xu-ly-loi-runtime-model-stt]], [[PBI-16-dich-local-sidecar]], [[PBI-17-dich-co-ngu-canh]], [[PBI-18-loopback-linux]], [[PBI-19-noi-stt-dich-subtitle-ready]], [[PBI-20-cua-so-phu-de-noi]], [[PBI-21-hien-thi-phu-de]], [[PBI-22-auto-scroll-fade-phu-de]], [[PBI-23-keo-tha-cua-so-phu-de]], [[PBI-24-chinh-co-chu-phu-de]]
