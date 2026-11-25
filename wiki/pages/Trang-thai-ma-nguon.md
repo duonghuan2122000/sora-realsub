@@ -1,11 +1,11 @@
 ---
 title: Trạng thái mã nguồn (snapshot)
-date: 2026-11-24
+date: 2026-11-25
 tags: [status]
 sources: [app/]
 ---
 
-# Trạng thái mã nguồn — snapshot 2026-11-25 (cập nhật sau PBI 17)
+# Trạng thái mã nguồn — snapshot 2026-11-25 (cập nhật sau PBI 18)
 
 Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ngày trên; ingest lại khi code có tiến triển mới.
 
@@ -34,7 +34,31 @@ Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ng�
   thật** trong container Linux hiện tại (môi trường không build được crate `app` — xem
   [[Rui-ro-ky-thuat]] mục dependency `wasapi`) — chỉ xác nhận 13/13 test logic bằng crate scratch
   độc lập. Xem [[PBI-17-dich-co-ngu-canh]].
-- **Vẫn chưa có**: chọn thiết bị output cụ thể cho loopback, cấu hình model path qua UI/config thật (hiện đọc tạm từ biến môi trường `WHISPER_MODEL_PATH`/`SORA_TRANSLATE_SIDECAR_PATH`/`SORA_TRANSLATE_MODEL_PATH`), UI hiển thị thông báo lỗi `model-error` (toast/dialog, thuộc M6/M8), tự động retry khi model lỗi, nối `RecentTranscriptContext`+`Translator` vào pipeline STT→subtitle thật, lưu trữ thật trong [[Pipeline-xu-ly-audio]]. Chưa thấy `rusqlite` trong Cargo deps. `cargo test -p app` không chạy được trên Linux (dependency `wasapi` không gate theo target — xem [[Rui-ro-ky-thuat]]), cần xác nhận lại trên máy Windows trước khi coi PBI 17 "đã kiểm thử" đầy đủ.
+- **Mới (PBI 18)**: gate `wasapi = "0.26"` vào
+  `[target.'cfg(windows)'.dependencies]` trong `Cargo.toml` (trước đó vô
+  điều kiện, chặn build Linux — phát hiện ở PBI 17, xem [[Rui-ro-ky-thuat]]).
+  `core/loopback_audio_source.rs` (bản WASAPI, PBI 6) thêm `#![cfg(windows)]`,
+  logic không đổi. Thêm `core/loopback_audio_source_linux.rs` (mới):
+  `LoopbackAudioSource` bản Linux dùng `libpulse-binding`/`libpulse-simple-binding`,
+  mở monitor source mặc định qua pseudo-device `@DEFAULT_MONITOR@` (tương
+  thích PulseAudio và PipeWire). `core/mod.rs` export `LoopbackAudioSource`
+  theo đúng 1 trong 2 module tuỳ `cfg(windows)`/`cfg(target_os = "linux")` —
+  `lib.rs` và các `src/bin/*.rs` dùng `LoopbackAudioSource` không cần sửa.
+  **Lần đầu `cargo build`/`cargo test -p app` chạy được thật trên container
+  Linux** — còn cần cài thêm hệ thống lib không liên quan code (`libpulse-dev`,
+  `libasound2-dev`, GTK/WebKit chuẩn của Tauri 2: `libgtk-3-dev`,
+  `libwebkit2gtk-4.1-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`,
+  `libsoup-3.0-dev`, `libjavascriptcoregtk-4.1-dev`), đã ghi lại ở
+  [[PBI-18-loopback-linux]] để lần sau không mất công dò lại. 60 unit test +
+  toàn bộ integration test pass trên Linux. Capture loopback thật đã xác
+  nhận bằng PulseAudio + tone 440Hz test (`T012-result.log`). **Hoàn tất M1
+  cho cả Windows và Linux.** **Chưa xác nhận trên Windows thật** (không có
+  máy Windows trong môi trường implement) — SC-002 cần người có máy Windows
+  xác nhận lại trước khi tick dòng roadmap M1 tương ứng. Xem
+  [[PBI-18-loopback-linux]].
+- **Vẫn chưa có**: chọn thiết bị output cụ thể cho loopback (cả Windows và
+  Linux — vẫn chỉ dùng thiết bị/sink mặc định), cấu hình model path qua
+  UI/config thật (hiện đọc tạm từ biến môi trường `WHISPER_MODEL_PATH`/`SORA_TRANSLATE_SIDECAR_PATH`/`SORA_TRANSLATE_MODEL_PATH`), UI hiển thị thông báo lỗi `model-error` (toast/dialog, thuộc M6/M8), tự động retry khi model lỗi, nối `RecentTranscriptContext`+`Translator` vào pipeline STT→subtitle thật, lưu trữ thật trong [[Pipeline-xu-ly-audio]]. Chưa thấy `rusqlite` trong Cargo deps. Dòng roadmap "Ghép ngữ cảnh" (PBI 17) vẫn CHƯA tick — nay `cargo test -p app` đã chạy được trên Linux (PBI 18), nên có thể xác nhận lại SC-001 của PBI 17 bằng sidecar+model thật trên Linux ở PBI kế tiếp (chưa làm trong phạm vi PBI 18).
 
 ## app/src (UI Vue)
 - `App.vue`, `main.ts`, `vite-env.d.ts`, `sample.test.ts` — skeleton Vite+Vue 3 mặc định.
@@ -43,7 +67,7 @@ Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ng�
 - **PBI 5, PBI 6, PBI 7, PBI 8 không đụng UI** — chỉ thi công phần lõi Rust capture + điều khiển phiên (mic, loopback, trộn, start/stop), command Tauri đã có nhưng chưa có nút bấm trong Vue.
 
 ## Kết luận
-M1 (Audio Capture) đã hoàn tất 5/5 mục (PBI 4-8). M2 (VAD) đã hoàn tất 3/3 mục (PBI 9-11). M3 (STT streaming) đã hoàn tất 4/4 (PBI 12-15). **M4 (Dịch) 2/3 mục đã xong**: `Translator` có cài đặt thật (`SidecarTranslator`, PBI 16) chạy qua sidecar process riêng (`app/translate-sidecar/`, đổi hướng do xung đột CRT native, xem [[Rui-ro-ky-thuat]]), **SC-001 (PBI 16) đã xác nhận bằng sidecar + model Marian-MT (opus-mt-en-vi, Apache-2.0, open-source) thật**; nay dùng được ngữ cảnh 1-2 câu trước khi dịch (PBI 17), **nhưng SC-001 của PBI 17 chưa xác nhận bằng sidecar+model thật** (chỉ xác nhận logic bằng crate scratch độc lập, do container Linux không build được crate `app` — xem [[Rui-ro-ky-thuat]]). Còn lại của M4: nối STT final → Translator (có ngữ cảnh) → event `subtitle-ready`. Kiểm thử tay trên UI thật (có mic/GUI) vẫn là khoảng trống chung từ PBI 8; chưa có UI hiển thị thông báo `model-error` (M6/M8).
+M1 (Audio Capture) đã hoàn tất 6/6 mục (PBI 4-8 + PBI 18, nay chạy được trên cả Windows và Linux). M2 (VAD) đã hoàn tất 3/3 mục (PBI 9-11). M3 (STT streaming) đã hoàn tất 4/4 (PBI 12-15). **M4 (Dịch) 2/3 mục đã xong**: `Translator` có cài đặt thật (`SidecarTranslator`, PBI 16) chạy qua sidecar process riêng (`app/translate-sidecar/`, đổi hướng do xung đột CRT native, xem [[Rui-ro-ky-thuat]]), **SC-001 (PBI 16) đã xác nhận bằng sidecar + model Marian-MT (opus-mt-en-vi, Apache-2.0, open-source) thật**; nay dùng được ngữ cảnh 1-2 câu trước khi dịch (PBI 17), **nhưng SC-001 của PBI 17 chưa xác nhận bằng sidecar+model thật** (chỉ xác nhận logic bằng crate scratch độc lập, do container Linux không build được crate `app` — xem [[Rui-ro-ky-thuat]]). Còn lại của M4: nối STT final → Translator (có ngữ cảnh) → event `subtitle-ready`. Kiểm thử tay trên UI thật (có mic/GUI) vẫn là khoảng trống chung từ PBI 8; chưa có UI hiển thị thông báo `model-error` (M6/M8).
 
 ## Liên quan
-[[Core-Rust]], [[UI-Vue]], [[Style-guide-token]], [[Quyet-dinh-hop-dong-core]], [[PBI-4-liet-ke-thiet-bi-mic]], [[PBI-5-capture-mic-pcm]], [[PBI-6-capture-loopback-wasapi]], [[PBI-7-tron-mic-loopback]], [[PBI-8-start-stop-capture]], [[PBI-9-vad-silero]], [[PBI-10-cat-segment-khoang-lang]], [[PBI-11-vad-segment-event]], [[PBI-12-stt-local-whisper]], [[PBI-13-ghep-stt-vao-luong]], [[PBI-14-transcript-partial-final-event]], [[PBI-15-xu-ly-loi-runtime-model-stt]], [[PBI-16-dich-local-sidecar]], [[PBI-17-dich-co-ngu-canh]]
+[[Core-Rust]], [[UI-Vue]], [[Style-guide-token]], [[Quyet-dinh-hop-dong-core]], [[PBI-4-liet-ke-thiet-bi-mic]], [[PBI-5-capture-mic-pcm]], [[PBI-6-capture-loopback-wasapi]], [[PBI-7-tron-mic-loopback]], [[PBI-8-start-stop-capture]], [[PBI-9-vad-silero]], [[PBI-10-cat-segment-khoang-lang]], [[PBI-11-vad-segment-event]], [[PBI-12-stt-local-whisper]], [[PBI-13-ghep-stt-vao-luong]], [[PBI-14-transcript-partial-final-event]], [[PBI-15-xu-ly-loi-runtime-model-stt]], [[PBI-16-dich-local-sidecar]], [[PBI-17-dich-co-ngu-canh]], [[PBI-18-loopback-linux]]

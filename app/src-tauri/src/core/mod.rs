@@ -4,7 +4,10 @@ mod audio_source;
 mod capture_session;
 mod devices;
 mod error;
+#[cfg(windows)]
 mod loopback_audio_source;
+#[cfg(target_os = "linux")]
+mod loopback_audio_source_linux;
 mod mic_audio_source;
 mod mixed_audio_source;
 mod segment;
@@ -20,7 +23,10 @@ pub use audio_source::AudioSource;
 pub use capture_session::CaptureSessionState;
 pub use devices::{AudioDeviceInfo, AudioHost, CpalAudioHost, list_input_devices};
 pub use error::CoreError;
+#[cfg(windows)]
 pub use loopback_audio_source::LoopbackAudioSource;
+#[cfg(target_os = "linux")]
+pub use loopback_audio_source_linux::LoopbackAudioSource;
 pub use mic_audio_source::MicAudioSource;
 pub use mixed_audio_source::MixedAudioSource;
 pub use mixed_audio_source::resample_linear;
