@@ -35,7 +35,7 @@ Quy ước: mỗi mục là 1 PBI/task nhỏ, nên tương ứng 1 commit hoặc
 ## M4 — Dịch (Translation)
 
 - [x] Implement `Translator` bằng model local (NLLB hoặc tương đương, chạy offline), test dịch 1 câu cố định ra kết quả đúng (PBI 16: `SidecarTranslator` chạy qua sidecar process riêng `app/translate-sidecar/` (crate Cargo độc lập, dùng `ct2rs`) để tránh xung đột CRT với `ort`; model dịch `gaudi/opus-mt-en-vi-ctranslate2` (Marian-MT, **license Apache-2.0, open-source**), xác nhận SC-001 + FR-004 bằng dữ liệu thật, 5/5 test pass)
-- [ ] Ghép ngữ cảnh: gửi kèm 1-2 câu trước khi dịch câu hiện tại, test câu có đại từ/thiếu ngữ cảnh dịch đúng hơn khi có context
+- [ ] Ghép ngữ cảnh: gửi kèm 1-2 câu trước khi dịch câu hiện tại, test câu có đại từ/thiếu ngữ cảnh dịch đúng hơn khi có context (PBI 17: code `SidecarTranslator::translate()` đã ghép/tách ngữ cảnh + fallback, 13/13 test logic pass trên crate scratch độc lập — **CHƯA tick** vì `cargo test -p app translator` chưa chạy được thật trong container Linux này, bị chặn bởi dependency `wasapi` không gate theo target [có từ PBI 6, không liên quan PBI 17] — xem `wiki/pages/Rui-ro-ky-thuat.md`; cần xác nhận lại trên máy Windows trước khi tick)
 - [ ] Nối STT final → Translator → event `subtitle-ready` (text gốc + text dịch), test end-to-end
 
 ## M5 — Cửa sổ phụ đề (Subtitle Overlay UI)
