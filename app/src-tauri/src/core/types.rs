@@ -26,12 +26,14 @@ pub struct TranscriptChunk {
     pub is_final: bool,
 }
 
-/// Phân loại lỗi runtime model STT (PBI 15; xem data-model.md): `Load` khi model không nạp
-/// được lúc bắt đầu phiên, `Infer` khi lỗi xảy ra lúc xử lý 1 segment cụ thể.
+/// Phân loại lỗi runtime model (PBI 15/19; xem data-model.md): `Load` khi model không nạp
+/// được lúc bắt đầu phiên, `Infer` khi lỗi xảy ra lúc STT xử lý 1 segment cụ thể, `Translate`
+/// khi lỗi xảy ra lúc dịch 1 câu transcript final cụ thể (PBI 19, FR-007).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ModelErrorKind {
     Load,
     Infer,
+    Translate,
 }
 
 /// Payload mô tả 1 lỗi runtime model STT, gửi cho UI qua event `model-error` (PBI 15).

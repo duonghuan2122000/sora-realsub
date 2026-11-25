@@ -38,7 +38,8 @@ cho tham số đó thực sự được dùng.
 3. **`RecentTranscriptContext`**: struct nhỏ (bounded FIFO tối đa 2 câu, `push()`/`recent()`) giữ
    câu transcript final gần nhất. Chỉ ở mức **đơn vị, có test riêng** — KHÔNG nối vào
    `TranscriptPipeline`/`lib.rs` thật (việc đó là mục roadmap M4 kế tiếp, "nối STT final →
-   Translator → `subtitle-ready`").
+   Translator → `subtitle-ready`"). **Cập nhật (PBI 19)**: đã nối vào `lib.rs::start_capture`
+   thật, xem [[PBI-19-noi-stt-dich-subtitle-ready]] — M4 hoàn tất 3/3.
 
 ## Cài đặt (code — `core/translator.rs`)
 - `normalize_context(context)`: lọc câu rỗng/khoảng trắng, giữ tối đa 2 câu cuối (FR-003, FR-005).

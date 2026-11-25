@@ -1,0 +1,6 @@
+
+running 1 test
+test noi_stt_final_qua_dich_co_ngu_canh_khop_pbi_17 ... ignored, cần WHISPER_MODEL_PATH + sidecar dịch/model local — xem quickstart.md PBI 19
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
