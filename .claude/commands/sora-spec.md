@@ -2,6 +2,8 @@
 description: Tạo file spec.md cho một PBI dựa trên quy trình Spec-Driven Development (tương đương /speckit.specify)
 argument-hint: <mã-pbi> <mô-tả-bổ-sung>
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir:*), Bash(ls:*)
+model: claude-sonnet-5-5
+effort: low
 ---
 
 ## Đầu vào

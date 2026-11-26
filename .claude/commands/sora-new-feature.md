@@ -2,6 +2,8 @@
 description: Chạy lần lượt sora-spec → sora-plan → sora-task → sora-implement cho một PBI mới (lấy từ roadmap.md nếu không truyền tay), sau đó cập nhật wiki và roadmap.md
 argument-hint: [mã-pbi] [mô-tả-tính-năng]
 allowed-tools: SlashCommand, Skill, Read, Write, Edit, Glob, Grep, Bash
+model: claude-haiku-5-5
+effort: low
 ---
 
 ## Đầu vào

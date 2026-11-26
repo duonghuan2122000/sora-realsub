@@ -2,6 +2,8 @@
 description: Đọc spec.md của một PBI và tạo plan.md (kế hoạch triển khai kỹ thuật), tương đương /speckit.plan
 argument-hint: <mã-pbi> <mô-tả-bổ-sung-về-kỹ-thuật>
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir:*), Bash(ls:*)
+model: claude-opus-5-5
+effort: low
 ---
 
 ## Đầu vào

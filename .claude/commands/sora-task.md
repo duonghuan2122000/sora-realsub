@@ -2,6 +2,8 @@
 description: Phân rã spec.md/plan.md của một PBI thành tasks.md — danh sách task đủ nhỏ để thi công, tương đương /speckit.tasks
 argument-hint: <mã-pbi>
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir:*), Bash(ls:*)
+model: claude-sonnet-5-5
+effort: low
 ---
 
 ## Đầu vào
