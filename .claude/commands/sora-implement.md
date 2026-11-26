@@ -2,6 +2,8 @@
 description: Thi công toàn bộ task trong tasks.md của một PBI, tương đương /speckit.implement
 argument-hint: <mã-pbi>
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+model: claude-opus-5-5
+effort: low
 ---
 
 ## Đầu vào
