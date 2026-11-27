@@ -5,7 +5,7 @@ tags: [status]
 sources: [app/]
 ---
 
-# Trạng thái mã nguồn — snapshot 2026-11-27 (cập nhật sau PBI 26)
+# Trạng thái mã nguồn — snapshot 2026-11-27 (cập nhật sau PBI 28)
 
 Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ngày trên; ingest lại khi code có tiến triển mới.
 
@@ -111,9 +111,13 @@ Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ng�
   hiển thị/chọn — **chưa nối vào `LoopbackAudioSource` thật**, vốn vẫn chỉ capture thiết bị output
   mặc định của hệ điều hành (xem mục "Vẫn chưa có" bên dưới). Xem
   [[PBI-26-man-hinh-chinh-chon-thiet-bi]].
+- **Mới (PBI 28)**: không đụng `app/src-tauri` — toàn bộ thay đổi ở `app/src` (xem mục dưới). Tiêu
+  thụ nguyên lệnh `start_capture`/`stop_capture` đã có từ PBI 8, không sửa Core. Xem
+  [[PBI-28-nut-start-stop-phien-dich]].
 - **Vẫn chưa có**: nối lựa chọn thiết bị output cụ thể (PBI 26) vào `LoopbackAudioSource` thật (cả
   Windows và Linux — capture vẫn chỉ dùng thiết bị/sink mặc định của hệ điều hành, bất kể UI chọn
-  gì), cấu hình model path qua
+  gì), **lệnh `start_capture` vẫn chưa nhận tham số ID mic/loopback** (nút Start/Stop PBI 28 chỉ gọi
+  nguyên trạng, không sửa Core — ranh giới phạm vi đã ghi rõ ở spec PBI 28/26), cấu hình model path qua
   UI/config thật (hiện đọc tạm từ biến môi trường `WHISPER_MODEL_PATH`/`SORA_TRANSLATE_SIDECAR_PATH`/`SORA_TRANSLATE_MODEL_PATH`), UI hiển thị thông báo lỗi `model-error` (toast/dialog, thuộc M6/M8), tự động retry khi model lỗi, auto-scroll/fade nhiều dòng phụ đề + kéo-thả/resize cửa sổ (M5 còn 4/6 mục), lưu trữ thật trong [[Pipeline-xu-ly-audio]]. Chưa thấy `rusqlite` trong Cargo deps. Dòng roadmap "Ghép ngữ cảnh" (PBI 17) vẫn CHƯA tick vì SC-001 riêng của PBI 17 vẫn chưa xác nhận bằng sidecar+model thật (PBI 19 tái dùng logic đó, không xác nhận lại SC-001 cũ).
 
 ## app/src (UI Vue)
@@ -169,11 +173,17 @@ Ghi chú: trạng thái code đổi nhanh, chỉ tin phần này tới mốc ng�
   để chọn (CSS highlight), emit `update:selected`/`devices-loaded`. Test mới: `App.test.ts` (4 case)
   + 2 case mới trong `DeviceSelector.test.ts`. Không persist lựa chọn (chỉ state phiên UI). Xem
   [[PBI-26-man-hinh-chinh-chon-thiet-bi]].
+- **Mới (PBI 28)**: `App.vue` thêm nút Start/Stop (`.session-btn`) — state máy `SessionButtonState`
+  (`idle`/`starting`/`running`/`stopping`), `startSession()`/`stopSession()` gọi
+  `invoke("start_capture"/"stop_capture")`, label/disabled theo computed, khoá 2 `DeviceSelector`
+  bằng `:inert="devicesLocked"` khi không `idle`. Nút "Xác nhận" (PBI 26) thêm class `.confirm-btn`
+  để phân biệt selector test, hành vi không đổi. Không đụng `app/src-tauri`. Test: `App.test.ts`
+  thêm 7 case mới (28/28 tổng). Xem [[PBI-28-nut-start-stop-phien-dich]].
 - Chưa có Pinia/vue-i18n/shadcn-vue/Lucide, chưa có `styles/tokens.scss` theo [[Style-guide-token]].
 - **PBI 5, PBI 6, PBI 7, PBI 8 không đụng UI** — chỉ thi công phần lõi Rust capture + điều khiển phiên (mic, loopback, trộn, start/stop), command Tauri đã có nhưng chưa có nút bấm trong Vue.
 
 ## Kết luận
-M1 (Audio Capture) đã hoàn tất 6/6 mục (PBI 4-8 + PBI 18, nay chạy được trên cả Windows và Linux). M2 (VAD) đã hoàn tất 3/3 mục (PBI 9-11). M3 (STT streaming) đã hoàn tất 4/4 (PBI 12-15). **M4 (Dịch) đã hoàn tất 3/3**: `Translator` có cài đặt thật (`SidecarTranslator`, PBI 16) chạy qua sidecar process riêng (`app/translate-sidecar/`, đổi hướng do xung đột CRT native, xem [[Rui-ro-ky-thuat]]), **SC-001 (PBI 16) đã xác nhận bằng sidecar + model Marian-MT (opus-mt-en-vi, Apache-2.0, open-source) thật**; dùng được ngữ cảnh 1-2 câu trước khi dịch (PBI 17, **SC-001 riêng của PBI 17 vẫn chưa xác nhận bằng sidecar+model thật**, chỉ logic); và đã **nối STT final → Translator (có ngữ cảnh) → event `subtitle-ready`** (PBI 19) — 65/65 test pass, container lần này build/test được cả phần Tauri/GTK. **M5 (Cửa sổ phụ đề) đã hoàn tất 6/6 mục, roadmap đã tick toàn bộ**: cửa sổ always-on-top/không viền (PBI 20), hiển thị `translatedText` thật (PBI 21), auto-scroll/fade 3 dòng gần nhất (PBI 22), kéo-thả (PBI 23), chỉnh cỡ chữ qua `localStorage` (PBI 24), ẩn-hiện bằng phím tắt toàn cục `Ctrl+Alt+H` (PBI 25) — xác nhận PASS trên Windows thật. PBI 17 (ngữ cảnh) và PBI 24 (chỉnh cỡ chữ) vẫn **chờ xác nhận tay trên Windows thật** riêng của chúng. **M6 (Điều khiển & cấu hình) nay bắt đầu, 1/4 mục**: màn hình chính chọn mic + nguồn loopback (PBI 26, 70/70 test Rust + 22/22 test Vitest pass) — "loopback" hiện là danh sách thiết bị output để chọn/validate, **chưa nối vào capture thật** (vẫn dùng thiết bị mặc định hệ điều hành); PBI 26 cũng **chờ xác nhận tay trên máy thật**. Kiểm thử tay trên UI thật (có mic/GUI) vẫn là khoảng trống chung từ PBI 8 cho phần audio/STT/dịch; chưa có UI hiển thị thông báo `model-error` (M6/M8).
+M1 (Audio Capture) đã hoàn tất 6/6 mục (PBI 4-8 + PBI 18, nay chạy được trên cả Windows và Linux). M2 (VAD) đã hoàn tất 3/3 mục (PBI 9-11). M3 (STT streaming) đã hoàn tất 4/4 (PBI 12-15). **M4 (Dịch) đã hoàn tất 3/3**: `Translator` có cài đặt thật (`SidecarTranslator`, PBI 16) chạy qua sidecar process riêng (`app/translate-sidecar/`, đổi hướng do xung đột CRT native, xem [[Rui-ro-ky-thuat]]), **SC-001 (PBI 16) đã xác nhận bằng sidecar + model Marian-MT (opus-mt-en-vi, Apache-2.0, open-source) thật**; dùng được ngữ cảnh 1-2 câu trước khi dịch (PBI 17, **SC-001 riêng của PBI 17 vẫn chưa xác nhận bằng sidecar+model thật**, chỉ logic); và đã **nối STT final → Translator (có ngữ cảnh) → event `subtitle-ready`** (PBI 19) — 65/65 test pass, container lần này build/test được cả phần Tauri/GTK. **M5 (Cửa sổ phụ đề) đã hoàn tất 6/6 mục, roadmap đã tick toàn bộ**: cửa sổ always-on-top/không viền (PBI 20), hiển thị `translatedText` thật (PBI 21), auto-scroll/fade 3 dòng gần nhất (PBI 22), kéo-thả (PBI 23), chỉnh cỡ chữ qua `localStorage` (PBI 24), ẩn-hiện bằng phím tắt toàn cục `Ctrl+Alt+H` (PBI 25) — xác nhận PASS trên Windows thật. PBI 17 (ngữ cảnh) và PBI 24 (chỉnh cỡ chữ) vẫn **chờ xác nhận tay trên Windows thật** riêng của chúng. **M6 (Điều khiển & cấu hình) nay 2/4 mục**: màn hình chính chọn mic + nguồn loopback (PBI 26, 70/70 test Rust + 22/22 test Vitest pass) — "loopback" hiện là danh sách thiết bị output để chọn/validate, **chưa nối vào capture thật** (vẫn dùng thiết bị mặc định hệ điều hành); nút Start/Stop phiên dịch phụ đề (PBI 28, 28/28 test Vitest pass) tái dùng nguyên `start_capture`/`stop_capture`, cũng **chưa nhận tham số thiết bị đã chọn**. Cả PBI 26 và PBI 28 **chờ xác nhận tay trên máy thật**. Kiểm thử tay trên UI thật (có mic/GUI) vẫn là khoảng trống chung từ PBI 8 cho phần audio/STT/dịch; chưa có UI hiển thị thông báo `model-error` (M6/M8); Core cũng chưa có event báo tự dừng phiên do lỗi runtime giữa lúc chạy (hạn chế mới ghi nhận ở PBI 28).
 
 ## Liên quan
-[[Core-Rust]], [[UI-Vue]], [[Style-guide-token]], [[Quyet-dinh-hop-dong-core]], [[PBI-4-liet-ke-thiet-bi-mic]], [[PBI-5-capture-mic-pcm]], [[PBI-6-capture-loopback-wasapi]], [[PBI-7-tron-mic-loopback]], [[PBI-8-start-stop-capture]], [[PBI-9-vad-silero]], [[PBI-10-cat-segment-khoang-lang]], [[PBI-11-vad-segment-event]], [[PBI-12-stt-local-whisper]], [[PBI-13-ghep-stt-vao-luong]], [[PBI-14-transcript-partial-final-event]], [[PBI-15-xu-ly-loi-runtime-model-stt]], [[PBI-16-dich-local-sidecar]], [[PBI-17-dich-co-ngu-canh]], [[PBI-18-loopback-linux]], [[PBI-19-noi-stt-dich-subtitle-ready]], [[PBI-20-cua-so-phu-de-noi]], [[PBI-21-hien-thi-phu-de]], [[PBI-22-auto-scroll-fade-phu-de]], [[PBI-23-keo-tha-cua-so-phu-de]], [[PBI-24-chinh-co-chu-phu-de]], [[PBI-25-an-hien-cua-so-phu-de]], [[PBI-26-man-hinh-chinh-chon-thiet-bi]]
+[[Core-Rust]], [[UI-Vue]], [[Style-guide-token]], [[Quyet-dinh-hop-dong-core]], [[PBI-4-liet-ke-thiet-bi-mic]], [[PBI-5-capture-mic-pcm]], [[PBI-6-capture-loopback-wasapi]], [[PBI-7-tron-mic-loopback]], [[PBI-8-start-stop-capture]], [[PBI-9-vad-silero]], [[PBI-10-cat-segment-khoang-lang]], [[PBI-11-vad-segment-event]], [[PBI-12-stt-local-whisper]], [[PBI-13-ghep-stt-vao-luong]], [[PBI-14-transcript-partial-final-event]], [[PBI-15-xu-ly-loi-runtime-model-stt]], [[PBI-16-dich-local-sidecar]], [[PBI-17-dich-co-ngu-canh]], [[PBI-18-loopback-linux]], [[PBI-19-noi-stt-dich-subtitle-ready]], [[PBI-20-cua-so-phu-de-noi]], [[PBI-21-hien-thi-phu-de]], [[PBI-22-auto-scroll-fade-phu-de]], [[PBI-23-keo-tha-cua-so-phu-de]], [[PBI-24-chinh-co-chu-phu-de]], [[PBI-25-an-hien-cua-so-phu-de]], [[PBI-26-man-hinh-chinh-chon-thiet-bi]], [[PBI-28-nut-start-stop-phien-dich]]

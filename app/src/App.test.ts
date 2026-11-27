@@ -27,7 +27,7 @@ describe("App - màn hình chính chọn thiết bị", () => {
     const items = wrapper.findAll("li");
     await items[0].trigger("click"); // mic
     await items[1].trigger("click"); // loopback
-    await wrapper.find("button:not(.device-selector button)").trigger("click");
+    await wrapper.find(".confirm-btn").trigger("click");
 
     expect(wrapper.text()).not.toContain("Vui lòng chọn");
   });
@@ -36,7 +36,7 @@ describe("App - màn hình chính chọn thiết bị", () => {
     const wrapper = mount(App);
     await flushPromises();
 
-    await wrapper.find("button:not(.device-selector button)").trigger("click");
+    await wrapper.find(".confirm-btn").trigger("click");
 
     expect(wrapper.text()).toContain("Vui lòng chọn microphone và nguồn loopback");
   });
@@ -48,7 +48,7 @@ describe("App - màn hình chính chọn thiết bị", () => {
     const items = wrapper.findAll("li");
     await items[0].trigger("click"); // chỉ chọn mic
 
-    await wrapper.find("button:not(.device-selector button)").trigger("click");
+    await wrapper.find(".confirm-btn").trigger("click");
 
     expect(wrapper.text()).toContain("Vui lòng chọn nguồn loopback");
   });
@@ -70,5 +70,117 @@ describe("App - màn hình chính chọn thiết bị", () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain("không còn khả dụng");
+  });
+});
+
+describe("App - nút Start/Stop phiên dịch phụ đề", () => {
+  async function mountWithDevicesSelected() {
+    const wrapper = mount(App);
+    await flushPromises();
+    const items = wrapper.findAll("li");
+    await items[0].trigger("click"); // mic
+    await items[1].trigger("click"); // loopback
+    return wrapper;
+  }
+
+  it("nút Start bị vô hiệu hoá khi chưa chọn đủ thiết bị", async () => {
+    const wrapper = mount(App);
+    await flushPromises();
+
+    const sessionBtn = wrapper.find(".session-btn");
+    expect(sessionBtn.text()).toBe("Start");
+    expect(sessionBtn.attributes("disabled")).toBeDefined();
+  });
+
+  it("bấm Start gọi start_capture, chuyển Đang chạy... rồi Stop khi resolve", async () => {
+    let resolveStart: () => void = () => {};
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_input_devices_cmd") return Promise.resolve(micDevices);
+      if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+      if (cmd === "start_capture") return new Promise<void>((resolve) => (resolveStart = resolve));
+      return Promise.reject(`lệnh không xác định: ${cmd}`);
+    });
+    const wrapper = await mountWithDevicesSelected();
+
+    const sessionBtn = wrapper.find(".session-btn");
+    await sessionBtn.trigger("click");
+    expect(wrapper.find(".session-btn").text()).toBe("Đang chạy...");
+    expect(wrapper.find(".session-btn").attributes("disabled")).toBeDefined();
+
+    resolveStart();
+    await flushPromises();
+
+    expect(wrapper.find(".session-btn").text()).toBe("Stop");
+    expect(invokeMock).toHaveBeenCalledWith("start_capture");
+  });
+
+  it("bấm Start nhiều lần lúc đang chờ chỉ gọi start_capture 1 lần", async () => {
+    let resolveStart: () => void = () => {};
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_input_devices_cmd") return Promise.resolve(micDevices);
+      if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+      if (cmd === "start_capture") return new Promise<void>((resolve) => (resolveStart = resolve));
+      return Promise.reject(`lệnh không xác định: ${cmd}`);
+    });
+    const wrapper = await mountWithDevicesSelected();
+
+    const sessionBtn = wrapper.find(".session-btn");
+    await sessionBtn.trigger("click");
+    await sessionBtn.trigger("click");
+    await sessionBtn.trigger("click");
+    resolveStart();
+    await flushPromises();
+
+    expect(invokeMock.mock.calls.filter((c) => c[0] === "start_capture")).toHaveLength(1);
+  });
+
+  it("Start lỗi → quay lại Start và hiển thị thông báo lỗi", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_input_devices_cmd") return Promise.resolve(micDevices);
+      if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+      if (cmd === "start_capture") return Promise.reject("đã có phiên đang chạy");
+      return Promise.reject(`lệnh không xác định: ${cmd}`);
+    });
+    const wrapper = await mountWithDevicesSelected();
+
+    await wrapper.find(".session-btn").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find(".session-btn").text()).toBe("Start");
+    expect(wrapper.text()).toContain("đã có phiên đang chạy");
+  });
+
+  it("bấm Stop khi đang chạy gọi stop_capture rồi quay về Start", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_input_devices_cmd") return Promise.resolve(micDevices);
+      if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+      if (cmd === "start_capture") return Promise.resolve();
+      if (cmd === "stop_capture") return Promise.resolve();
+      return Promise.reject(`lệnh không xác định: ${cmd}`);
+    });
+    const wrapper = await mountWithDevicesSelected();
+    await wrapper.find(".session-btn").trigger("click");
+    await flushPromises();
+    expect(wrapper.find(".session-btn").text()).toBe("Stop");
+
+    await wrapper.find(".session-btn").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find(".session-btn").text()).toBe("Start");
+    expect(invokeMock).toHaveBeenCalledWith("stop_capture");
+  });
+
+  it("khoá chọn thiết bị (inert) khi phiên không ở trạng thái idle", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_input_devices_cmd") return Promise.resolve(micDevices);
+      if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+      if (cmd === "start_capture") return new Promise(() => {});
+      return Promise.reject(`lệnh không xác định: ${cmd}`);
+    });
+    const wrapper = await mountWithDevicesSelected();
+
+    await wrapper.find(".session-btn").trigger("click");
+
+    expect(wrapper.find(".device-panels").attributes("inert")).toBeDefined();
   });
 });

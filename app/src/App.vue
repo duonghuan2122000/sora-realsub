@@ -1,11 +1,71 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
+import { invoke } from "@tauri-apps/api/core";
 import DeviceSelector, { type AudioDeviceInfo } from "./components/DeviceSelector.vue";
+
+type SessionButtonState = "idle" | "starting" | "running" | "stopping";
 
 const micDeviceId = ref<string | null>(null);
 const loopbackDeviceId = ref<string | null>(null);
 const confirmError = ref("");
 const deviceLostWarning = ref("");
+const sessionState = ref<SessionButtonState>("idle");
+const sessionError = ref("");
+
+const devicesSelected = computed(() => Boolean(micDeviceId.value && loopbackDeviceId.value));
+const devicesLocked = computed(() => sessionState.value !== "idle");
+
+const sessionLabel = computed(() => {
+  switch (sessionState.value) {
+    case "starting":
+      return "Đang chạy...";
+    case "running":
+      return "Stop";
+    case "stopping":
+      return "Đang dừng...";
+    default:
+      return "Start";
+  }
+});
+
+const sessionButtonDisabled = computed(() => {
+  if (sessionState.value === "starting" || sessionState.value === "stopping") return true;
+  if (sessionState.value === "idle") return !devicesSelected.value;
+  return false;
+});
+
+function onSessionButtonClick() {
+  if (sessionState.value === "idle") {
+    startSession();
+  } else if (sessionState.value === "running") {
+    stopSession();
+  }
+}
+
+async function startSession() {
+  sessionError.value = "";
+  sessionState.value = "starting";
+  try {
+    await invoke("start_capture");
+    sessionState.value = "running";
+  } catch (e) {
+    sessionError.value = typeof e === "string" ? e : "Không thể bắt đầu phiên dịch phụ đề.";
+    sessionState.value = "idle";
+  }
+}
+
+async function stopSession() {
+  sessionState.value = "stopping";
+  try {
+    await invoke("stop_capture");
+  } catch (e) {
+    if (e !== "không có phiên nào để dừng") {
+      sessionError.value = typeof e === "string" ? e : "Không thể dừng phiên dịch phụ đề.";
+    }
+  } finally {
+    sessionState.value = "idle";
+  }
+}
 
 function onMicSelected(id: string | null) {
   micDeviceId.value = id;
@@ -56,7 +116,7 @@ function confirmSelection() {
     <h1>Sora RealSub</h1>
     <p class="subtitle">Chọn thiết bị để bắt đầu phiên phụ đề</p>
 
-    <div class="device-panels">
+    <div class="device-panels" :class="{ 'device-panels--locked': devicesLocked }" :inert="devicesLocked">
       <DeviceSelector
         title="Chọn microphone"
         command="list_input_devices_cmd"
@@ -77,8 +137,12 @@ function confirmSelection() {
 
     <p v-if="deviceLostWarning" class="warning">{{ deviceLostWarning }}</p>
     <p v-if="confirmError" class="error">{{ confirmError }}</p>
+    <p v-if="sessionError" class="error">{{ sessionError }}</p>
 
-    <button type="button" @click="confirmSelection">Xác nhận</button>
+    <button type="button" class="confirm-btn" @click="confirmSelection">Xác nhận</button>
+    <button type="button" class="session-btn" :disabled="sessionButtonDisabled" @click="onSessionButtonClick">
+      {{ sessionLabel }}
+    </button>
   </main>
 </template>
 
