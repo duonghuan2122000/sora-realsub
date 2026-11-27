@@ -59,7 +59,7 @@ cài đặt loopback riêng:
 ## M6 — Điều khiển & cấu hình (Control UI)
 
 - [x] Màn hình chính: chọn thiết bị mic + nguồn loopback, test chọn sai thiết bị báo lỗi rõ ràng (PBI 26: màn hình chính mới ở `App.vue` thay skeleton mặc định; "loopback" = danh sách thiết bị output qua `list_output_devices_cmd` mới, tái dùng pattern `AudioHost`; validate đủ 2 lựa chọn + xoá lựa chọn khi thiết bị mất khả dụng, báo lỗi rõ ràng; 70/70 test Rust + 22/22 test Vitest pass; **chưa xác nhận tay trên máy thật có mic/loopback thật**, chỉ xác nhận layout+đường lỗi qua `vite dev` trong browser pane — xem `wiki/pages/PBI-26-man-hinh-chinh-chon-thiet-bi.md`)
-- [ ] Nút Start/Stop phiên dịch phụ đề, test trạng thái UI đồng bộ với Core (đang chạy/đã dừng)
+- [x] Nút Start/Stop phiên dịch phụ đề, test trạng thái UI đồng bộ với Core (đang chạy/đã dừng) (PBI 28: state máy 4 giá trị idle/starting/running/stopping ở `App.vue`, tái dùng `start_capture`/`stop_capture` có sẵn; 28/28 test Vitest pass; chưa xác nhận tay trên máy thật có mic/loopback thật)
 - [ ] Chọn cặp ngôn ngữ nguồn-đích từ UI, test đổi ngôn ngữ áp dụng ngay cho phiên mới
 - [ ] Lưu cấu hình (thiết bị, ngôn ngữ, vị trí cửa sổ) vào file config, test khởi động lại app giữ cấu hình cũ
 
