@@ -1,4 +1,5 @@
 use super::error::CoreError;
+use super::mixed_audio_source::resample_linear;
 use super::segment::{self, DEFAULT_MIN_SILENCE_FRAMES};
 use super::types::AudioFrame;
 use super::vad::{self, FrameLabel, VAD_CHUNK_SIZE, VAD_SAMPLE_RATE};
@@ -12,15 +13,24 @@ pub struct SegmentReady {
     pub sample_rate: u32,
 }
 
-/// Cắt segment streaming: tích lũy `AudioFrame` liên tục, mỗi lần nhận frame mới chạy lại VAD +
-/// cắt segment trên toàn bộ buffer rồi chỉ trả về segment MỚI vừa đóng thật (xem research.md PBI 11,
+/// Cắt segment streaming: tích lũy mẫu đã resample về 16kHz liên tục, mỗi lần nhận frame mới
+/// chạy lại VAD + cắt segment trên phần "đuôi" CHƯA xử lý xong (đã cắt bỏ phần của các segment
+/// đã đóng và phát ra trước đó) rồi chỉ trả về segment MỚI vừa đóng thật (xem research.md PBI 11,
 /// quyết định 1). Segment còn mở ở cuối buffer (đang nói, hoặc lặng chưa đủ ngưỡng) không được trả về
 /// cho tới khi đã đóng ở một lần `push_frame` sau.
+///
+/// Phải cắt bỏ phần buffer đã đóng xong ngay sau khi phát ra segment — nếu không, VAD (vốn chạy
+/// inference lại từ đầu mỗi lần gọi, xem `vad::detect`) phải xử lý lại TOÀN BỘ lịch sử audio của
+/// phiên mỗi 15ms, chi phí tăng theo thời gian session tới mức không còn kịp real-time (phiên
+/// càng dài, segment mới xuất hiện càng trễ rồi dừng hẳn không phát thêm được nữa).
 #[derive(Default)]
 pub struct VadPipeline {
-    buffer: Vec<AudioFrame>,
-    /// Số segment đã chắc chắn đóng và đã phát ra, loại trừ segment còn mở dở ở cuối buffer.
-    closed_count: usize,
+    /// Mẫu 16kHz mono CHƯA thuộc về segment nào đã đóng — chỉ gồm segment đang mở (nếu có) và
+    /// khoảng lặng sau nó chưa đủ `DEFAULT_MIN_SILENCE_FRAMES`.
+    resampled: Vec<f32>,
+    /// Số VAD-chunk (`VAD_CHUNK_SIZE` mẫu) đã bị cắt bỏ khỏi `resampled` vì thuộc segment đã đóng —
+    /// cộng vào index cục bộ để trả ra `start_frame_index`/`end_frame_index` đúng theo toàn phiên.
+    frame_offset: usize,
 }
 
 impl VadPipeline {
@@ -30,27 +40,38 @@ impl VadPipeline {
 
     /// Thêm 1 frame audio mới, trả về các `SegmentReady` MỚI đóng kể từ lần gọi trước (FR-001, FR-004).
     pub fn push_frame(&mut self, frame: AudioFrame) -> Result<Vec<SegmentReady>, CoreError> {
-        self.buffer.push(frame);
-        let labels = vad::detect(&self.buffer)?;
+        self.resampled
+            .extend(resample_linear(&frame.samples, frame.sample_rate, VAD_SAMPLE_RATE));
+
+        // `vad::detect` nhận &[AudioFrame] — gói lại thành 1 frame cùng sample rate để
+        // resample_linear bên trong là no-op (chỉ clone), không tính lại VAD trên dữ liệu đã xử lý.
+        let probe = AudioFrame {
+            samples: self.resampled.clone(),
+            sample_rate: VAD_SAMPLE_RATE,
+        };
+        let labels = vad::detect(&[probe])?;
         let segments = segment::segment(&labels);
 
         let closed_len = closed_segment_count(&labels, segments.len());
-        if closed_len <= self.closed_count {
+        if closed_len == 0 {
             return Ok(Vec::new());
         }
 
-        let resampled = vad::resample_all(&self.buffer);
-        let ready = segments[self.closed_count..closed_len]
+        let ready: Vec<SegmentReady> = segments[..closed_len]
             .iter()
             .map(|seg| SegmentReady {
-                start_frame_index: seg.start_frame_index,
-                end_frame_index: seg.end_frame_index,
-                samples: slice_samples(&resampled, seg.start_frame_index, seg.end_frame_index),
+                start_frame_index: seg.start_frame_index + self.frame_offset,
+                end_frame_index: seg.end_frame_index + self.frame_offset,
+                samples: slice_samples(&self.resampled, seg.start_frame_index, seg.end_frame_index),
                 sample_rate: VAD_SAMPLE_RATE,
             })
             .collect();
 
-        self.closed_count = closed_len;
+        let consumed_chunks = segments[closed_len - 1].end_frame_index + 1;
+        let consumed_samples = (consumed_chunks * VAD_CHUNK_SIZE).min(self.resampled.len());
+        self.resampled.drain(0..consumed_samples);
+        self.frame_offset += consumed_chunks;
+
         Ok(ready)
     }
 }
