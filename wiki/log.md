@@ -38,3 +38,4 @@
 ## [2026-11-25] update | PBI 25 — xác nhận PASS test tay trên Windows thật (Ctrl+Alt+H ẩn/hiện đúng), tick dòng roadmap.md tương ứng, cập nhật PBI-25-an-hien-cua-so-phu-de, Trang-thai-ma-nguon, index
 ## [2026-11-27] ingest | PBI 26: Màn hình chính chọn thiết bị mic + nguồn loopback (spec/plan/tasks/evidence, code app/src-tauri + app/src), bắt đầu M6
 ## [2026-11-27] ingest | PBI 28: Nút Start/Stop phiên dịch phụ đề (spec/plan/tasks/evidence, code App.vue tái dùng start_capture/stop_capture, 28/28 test Vitest pass, chưa xác nhận tay máy thật); M6 2/4; cập nhật PBI-28-nut-start-stop-phien-dich, Trang-thai-ma-nguon, index
+## [2026-11-27] ingest | PBI 29: Chọn cặp ngôn ngữ nguồn-đích từ UI (spec/plan/tasks/research/data-model/evidence, code core/translator.rs + lib.rs + LanguagePairSelector.vue + App.vue, 74/74 test Rust + 37/37 test Vitest pass, chưa xác nhận tay ≥2 cặp ngôn ngữ thật); M6 3/4; cập nhật PBI-29-chon-cap-ngon-ngu, Trang-thai-ma-nguon, index

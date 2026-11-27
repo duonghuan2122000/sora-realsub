@@ -102,6 +102,26 @@ fn extract_current_translation(
 const SOURCE_LANG: &str = "en";
 const TARGET_LANG: &str = "vi";
 
+/// Một cặp ngôn ngữ nguồn-đích hệ thống hỗ trợ chọn từ UI (PBI 29). Danh sách tĩnh, không
+/// persist — khi có model dịch mới chỉ cần thêm phần tử vào `SUPPORTED_LANGUAGE_PAIRS`
+/// (research.md Quyết định 1).
+pub struct LanguagePair {
+    pub id: &'static str,
+    pub source_lang: &'static str,
+    pub target_lang: &'static str,
+    pub label: &'static str,
+}
+
+/// Danh sách cặp ngôn ngữ hệ thống hỗ trợ. Hiện chỉ có 1 phần tử, khớp model dịch đã có
+/// (PBI 16). Mọi phần tử PHẢI có `source_lang != target_lang` (đảm bảo FR-003 bằng cấu trúc
+/// dữ liệu, xem test `moi_cap_ngon_ngu_nguon_khac_dich`).
+pub const SUPPORTED_LANGUAGE_PAIRS: &[LanguagePair] = &[LanguagePair {
+    id: "en-vi",
+    source_lang: SOURCE_LANG,
+    target_lang: TARGET_LANG,
+    label: "Anh → Việt",
+}];
+
 /// Cài đặt `Translator` bằng model dịch local open-source (Marian-MT, Apache-2.0 — xem
 /// research.md PBI 16), chạy qua một **tiến trình ngoài (sidecar)** thay vì binding native
 /// in-process — tránh xung đột linker CRT tĩnh/động giữa thư viện binding dịch và `ort`
@@ -196,6 +216,15 @@ impl Translator for SidecarTranslator {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // PBI 29 — T002: danh sách cặp ngôn ngữ hỗ trợ không rỗng và mọi cặp có nguồn != đích.
+    #[test]
+    fn danh_sach_cap_ngon_ngu_khong_rong_va_moi_cap_nguon_khac_dich() {
+        assert!(!SUPPORTED_LANGUAGE_PAIRS.is_empty());
+        for pair in SUPPORTED_LANGUAGE_PAIRS {
+            assert_ne!(pair.source_lang, pair.target_lang);
+        }
+    }
 
     /// Cài đặt giả: ghép tiền tố "[dịch]" + số câu ngữ cảnh nhận được.
     struct MockTranslator;
