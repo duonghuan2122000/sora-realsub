@@ -2,11 +2,15 @@
 import { ref, computed } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import DeviceSelector, { type AudioDeviceInfo } from "./components/DeviceSelector.vue";
+import LanguagePairSelector, {
+  type LanguagePairInfo,
+} from "./components/LanguagePairSelector.vue";
 
 type SessionButtonState = "idle" | "starting" | "running" | "stopping";
 
 const micDeviceId = ref<string | null>(null);
 const loopbackDeviceId = ref<string | null>(null);
+const selectedPairId = ref<string | null>(null);
 const confirmError = ref("");
 const deviceLostWarning = ref("");
 const sessionState = ref<SessionButtonState>("idle");
@@ -46,7 +50,7 @@ async function startSession() {
   sessionError.value = "";
   sessionState.value = "starting";
   try {
-    await invoke("start_capture");
+    await invoke("start_capture", { pairId: selectedPairId.value });
     sessionState.value = "running";
   } catch (e) {
     sessionError.value = typeof e === "string" ? e : "Không thể bắt đầu phiên dịch phụ đề.";
@@ -73,6 +77,16 @@ function onMicSelected(id: string | null) {
 
 function onLoopbackSelected(id: string | null) {
   loopbackDeviceId.value = id;
+}
+
+function onLanguagePairSelected(id: string | null) {
+  selectedPairId.value = id;
+}
+
+function onLanguagePairsLoaded(pairs: LanguagePairInfo[]) {
+  if (selectedPairId.value === null && pairs.length > 0) {
+    selectedPairId.value = pairs[0].id;
+  }
 }
 
 function checkStillAvailable(
@@ -134,6 +148,13 @@ function confirmSelection() {
         @devices-loaded="onLoopbackDevicesLoaded"
       />
     </div>
+
+    <LanguagePairSelector
+      :selected="selectedPairId"
+      :disabled="devicesLocked"
+      @update:selected="onLanguagePairSelected"
+      @pairs-loaded="onLanguagePairsLoaded"
+    />
 
     <p v-if="deviceLostWarning" class="warning">{{ deviceLostWarning }}</p>
     <p v-if="confirmError" class="error">{{ confirmError }}</p>

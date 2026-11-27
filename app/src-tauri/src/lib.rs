@@ -3,9 +3,9 @@ pub mod core;
 
 use core::{
     AudioDeviceInfo, CaptureSessionState, CpalAudioHost, LoopbackAudioSource, MicAudioSource,
-    MixedAudioSource, ModelErrorKind, RecentTranscriptContext, SidecarTranslator,
-    TranscriptPipeline, Translator, VadPipeline, WhisperSpeechToText, list_input_devices,
-    list_output_devices,
+    MixedAudioSource, ModelErrorKind, RecentTranscriptContext, SUPPORTED_LANGUAGE_PAIRS,
+    SidecarTranslator, TranscriptPipeline, Translator, VadPipeline, WhisperSpeechToText,
+    list_input_devices, list_output_devices,
 };
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -143,8 +143,51 @@ fn list_output_devices_cmd() -> Result<Vec<AudioDeviceInfo>, String> {
     list_output_devices(&CpalAudioHost).map_err(|e| e.to_string())
 }
 
+/// Thông tin 1 cặp ngôn ngữ hỗ trợ, trả cho UI (camelCase, PBI 29; xem data-model.md).
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct LanguagePairInfo {
+    id: String,
+    source_lang: String,
+    target_lang: String,
+    label: String,
+}
+
 #[tauri::command]
-fn start_capture(app_handle: AppHandle, session: State<CaptureSessionState>) -> Result<(), String> {
+fn list_language_pairs_cmd() -> Vec<LanguagePairInfo> {
+    SUPPORTED_LANGUAGE_PAIRS
+        .iter()
+        .map(|pair| LanguagePairInfo {
+            id: pair.id.to_string(),
+            source_lang: pair.source_lang.to_string(),
+            target_lang: pair.target_lang.to_string(),
+            label: pair.label.to_string(),
+        })
+        .collect()
+}
+
+/// Tra `pair_id` trong danh sách cặp ngôn ngữ hỗ trợ trước khi tạo session — không start phiên
+/// với cặp ngôn ngữ không hợp lệ (PBI 29, FR-001/FR-005). Tách khỏi `start_capture` để test được
+/// không cần `AppHandle`/`State` (giống lý do tách `translate_final_chunk`). Hiện chỉ có 1 cặp
+/// hỗ trợ, khớp đúng 1 model cấu hình qua `SORA_TRANSLATE_MODEL_PATH`, nên không cần tra riêng
+/// `model_dir` theo `pair_id` — khi có cặp thứ 2 (model khác), map `pair_id -> model_dir` mới
+/// cần thêm.
+fn validate_language_pair(pair_id: &str) -> Result<(), String> {
+    if SUPPORTED_LANGUAGE_PAIRS.iter().any(|pair| pair.id == pair_id) {
+        Ok(())
+    } else {
+        Err(format!("cặp ngôn ngữ không được hỗ trợ: {pair_id}"))
+    }
+}
+
+#[tauri::command]
+fn start_capture(
+    pair_id: String,
+    app_handle: AppHandle,
+    session: State<CaptureSessionState>,
+) -> Result<(), String> {
+    validate_language_pair(&pair_id)?;
+
     let source = MixedAudioSource::new(
         Box::new(MicAudioSource::new(None)),
         Box::new(LoopbackAudioSource::new()),
@@ -342,6 +385,7 @@ pub fn run() {
             greet,
             list_input_devices_cmd,
             list_output_devices_cmd,
+            list_language_pairs_cmd,
             start_capture,
             stop_capture
         ])
@@ -362,6 +406,34 @@ mod tests {
     #[test]
     fn greet_returns_greeting_with_name() {
         assert_eq!(greet("Sora"), "Hello, Sora! You've been greeted from Rust!");
+    }
+
+    // PBI 29 — T004: list_language_pairs_cmd trả đúng số lượng, map đúng field từ
+    // SUPPORTED_LANGUAGE_PAIRS (id/source_lang/target_lang/label).
+    #[test]
+    fn list_language_pairs_cmd_tra_dung_danh_sach() {
+        let pairs = list_language_pairs_cmd();
+        assert_eq!(pairs.len(), SUPPORTED_LANGUAGE_PAIRS.len());
+        for (info, pair) in pairs.iter().zip(SUPPORTED_LANGUAGE_PAIRS.iter()) {
+            assert_eq!(info.id, pair.id);
+            assert_eq!(info.source_lang, pair.source_lang);
+            assert_eq!(info.target_lang, pair.target_lang);
+            assert_eq!(info.label, pair.label);
+        }
+    }
+
+    // PBI 29 — T007: pair_id khớp 1 cặp hỗ trợ -> Ok; pair_id không khớp -> Err rõ ràng.
+    #[test]
+    fn validate_language_pair_pair_id_hop_le_tra_ok() {
+        let valid_id = SUPPORTED_LANGUAGE_PAIRS[0].id;
+        assert!(validate_language_pair(valid_id).is_ok());
+    }
+
+    #[test]
+    fn validate_language_pair_pair_id_khong_hop_le_tra_loi() {
+        let result = validate_language_pair("khong-ton-tai");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("khong-ton-tai"));
     }
 
     // PBI 25 — T007: đảo đúng true<->false, và đảo liên tục nhiều lần cho kết quả đúng chu kỳ 2

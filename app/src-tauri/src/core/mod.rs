@@ -34,7 +34,9 @@ pub use segment::{Segment, segment, segment_with_min_silence};
 pub use speech_to_text::{SpeechToText, WhisperSpeechToText};
 pub use subtitle_sink::SubtitleSink;
 pub use transcript_pipeline::TranscriptPipeline;
-pub use translator::{RecentTranscriptContext, SidecarTranslator, Translator};
+pub use translator::{
+    LanguagePair, RecentTranscriptContext, SUPPORTED_LANGUAGE_PAIRS, SidecarTranslator, Translator,
+};
 pub use types::{
     AudioFrame, ModelErrorEvent, ModelErrorKind, StreamHandle, Subtitle, TranscriptChunk,
 };

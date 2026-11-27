@@ -9,12 +9,14 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 const micDevices = [{ id: "mic-a", name: "Mic A", is_default: true }];
 const loopbackDevices = [{ id: "spk-a", name: "Speaker A", is_default: true }];
+const languagePairs = [{ id: "en-vi", sourceLang: "en", targetLang: "vi", label: "Anh → Việt" }];
 
 beforeEach(() => {
   invokeMock.mockReset();
   invokeMock.mockImplementation((cmd: string) => {
     if (cmd === "list_input_devices_cmd") return Promise.resolve(micDevices);
     if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+    if (cmd === "list_language_pairs_cmd") return Promise.resolve(languagePairs);
     return Promise.reject(`lệnh không xác định: ${cmd}`);
   });
 });
@@ -63,6 +65,7 @@ describe("App - màn hình chính chọn thiết bị", () => {
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "list_input_devices_cmd") return Promise.resolve([]);
       if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+      if (cmd === "list_language_pairs_cmd") return Promise.resolve(languagePairs);
       return Promise.reject(`lệnh không xác định: ${cmd}`);
     });
     const refreshButtons = wrapper.findAll(".device-selector button");
@@ -97,6 +100,7 @@ describe("App - nút Start/Stop phiên dịch phụ đề", () => {
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "list_input_devices_cmd") return Promise.resolve(micDevices);
       if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+      if (cmd === "list_language_pairs_cmd") return Promise.resolve(languagePairs);
       if (cmd === "start_capture") return new Promise<void>((resolve) => (resolveStart = resolve));
       return Promise.reject(`lệnh không xác định: ${cmd}`);
     });
@@ -111,7 +115,7 @@ describe("App - nút Start/Stop phiên dịch phụ đề", () => {
     await flushPromises();
 
     expect(wrapper.find(".session-btn").text()).toBe("Stop");
-    expect(invokeMock).toHaveBeenCalledWith("start_capture");
+    expect(invokeMock).toHaveBeenCalledWith("start_capture", { pairId: "en-vi" });
   });
 
   it("bấm Start nhiều lần lúc đang chờ chỉ gọi start_capture 1 lần", async () => {
@@ -119,6 +123,7 @@ describe("App - nút Start/Stop phiên dịch phụ đề", () => {
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "list_input_devices_cmd") return Promise.resolve(micDevices);
       if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+      if (cmd === "list_language_pairs_cmd") return Promise.resolve(languagePairs);
       if (cmd === "start_capture") return new Promise<void>((resolve) => (resolveStart = resolve));
       return Promise.reject(`lệnh không xác định: ${cmd}`);
     });
@@ -138,6 +143,7 @@ describe("App - nút Start/Stop phiên dịch phụ đề", () => {
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "list_input_devices_cmd") return Promise.resolve(micDevices);
       if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+      if (cmd === "list_language_pairs_cmd") return Promise.resolve(languagePairs);
       if (cmd === "start_capture") return Promise.reject("đã có phiên đang chạy");
       return Promise.reject(`lệnh không xác định: ${cmd}`);
     });
@@ -154,6 +160,7 @@ describe("App - nút Start/Stop phiên dịch phụ đề", () => {
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "list_input_devices_cmd") return Promise.resolve(micDevices);
       if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+      if (cmd === "list_language_pairs_cmd") return Promise.resolve(languagePairs);
       if (cmd === "start_capture") return Promise.resolve();
       if (cmd === "stop_capture") return Promise.resolve();
       return Promise.reject(`lệnh không xác định: ${cmd}`);
@@ -174,6 +181,7 @@ describe("App - nút Start/Stop phiên dịch phụ đề", () => {
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "list_input_devices_cmd") return Promise.resolve(micDevices);
       if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+      if (cmd === "list_language_pairs_cmd") return Promise.resolve(languagePairs);
       if (cmd === "start_capture") return new Promise(() => {});
       return Promise.reject(`lệnh không xác định: ${cmd}`);
     });
@@ -182,5 +190,67 @@ describe("App - nút Start/Stop phiên dịch phụ đề", () => {
     await wrapper.find(".session-btn").trigger("click");
 
     expect(wrapper.find(".device-panels").attributes("inert")).toBeDefined();
+  });
+});
+
+describe("App - chọn cặp ngôn ngữ nguồn-đích (PBI 29)", () => {
+  async function mountWithDevicesSelected() {
+    const wrapper = mount(App);
+    await flushPromises();
+    const items = wrapper.findAll("li");
+    await items[0].trigger("click"); // mic
+    await items[1].trigger("click"); // loopback
+    return wrapper;
+  }
+
+  it("mặc định chọn cặp ngôn ngữ đầu tiên sau khi tải danh sách xong", async () => {
+    const wrapper = mount(App);
+    await flushPromises();
+
+    expect(wrapper.find("select").element.value).toBe("en-vi");
+  });
+
+  it("ô chọn ngôn ngữ không bị khoá khi phiên ở trạng thái idle", async () => {
+    const wrapper = mount(App);
+    await flushPromises();
+
+    expect(wrapper.find("select").attributes("disabled")).toBeUndefined();
+  });
+
+  it("ô chọn ngôn ngữ bị khoá khi phiên đang running", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_input_devices_cmd") return Promise.resolve(micDevices);
+      if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+      if (cmd === "list_language_pairs_cmd") return Promise.resolve(languagePairs);
+      if (cmd === "start_capture") return Promise.resolve();
+      return Promise.reject(`lệnh không xác định: ${cmd}`);
+    });
+    const wrapper = await mountWithDevicesSelected();
+
+    await wrapper.find(".session-btn").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find("select").attributes("disabled")).toBeDefined();
+  });
+
+  it("đổi cặp ngôn ngữ rồi nhấn Start gửi đúng pairId đang chọn", async () => {
+    const extraPairs = [
+      { id: "en-vi", sourceLang: "en", targetLang: "vi", label: "Anh → Việt" },
+      { id: "vi-en", sourceLang: "vi", targetLang: "en", label: "Việt → Anh" },
+    ];
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_input_devices_cmd") return Promise.resolve(micDevices);
+      if (cmd === "list_output_devices_cmd") return Promise.resolve(loopbackDevices);
+      if (cmd === "list_language_pairs_cmd") return Promise.resolve(extraPairs);
+      if (cmd === "start_capture") return Promise.resolve();
+      return Promise.reject(`lệnh không xác định: ${cmd}`);
+    });
+    const wrapper = await mountWithDevicesSelected();
+
+    await wrapper.find("select").setValue("vi-en");
+    await wrapper.find(".session-btn").trigger("click");
+    await flushPromises();
+
+    expect(invokeMock).toHaveBeenCalledWith("start_capture", { pairId: "vi-en" });
   });
 });
