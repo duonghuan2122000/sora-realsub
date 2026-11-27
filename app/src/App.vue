@@ -1,53 +1,106 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { invoke } from "@tauri-apps/api/core";
-import DeviceSelector from "./components/DeviceSelector.vue";
+import DeviceSelector, { type AudioDeviceInfo } from "./components/DeviceSelector.vue";
 
-const greetMsg = ref("");
-const name = ref("");
+const micDeviceId = ref<string | null>(null);
+const loopbackDeviceId = ref<string | null>(null);
+const confirmError = ref("");
+const deviceLostWarning = ref("");
 
-async function greet() {
-  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  greetMsg.value = await invoke("greet", { name: name.value });
+function onMicSelected(id: string | null) {
+  micDeviceId.value = id;
+}
+
+function onLoopbackSelected(id: string | null) {
+  loopbackDeviceId.value = id;
+}
+
+function checkStillAvailable(
+  selectedId: string | null,
+  devices: AudioDeviceInfo[],
+): boolean {
+  if (selectedId === null) return true;
+  return devices.some((d) => d.id === selectedId);
+}
+
+function onMicDevicesLoaded(devices: AudioDeviceInfo[]) {
+  if (!checkStillAvailable(micDeviceId.value, devices)) {
+    micDeviceId.value = null;
+    deviceLostWarning.value = "Thiết bị mic đã chọn không còn khả dụng, vui lòng chọn lại.";
+  }
+}
+
+function onLoopbackDevicesLoaded(devices: AudioDeviceInfo[]) {
+  if (!checkStillAvailable(loopbackDeviceId.value, devices)) {
+    loopbackDeviceId.value = null;
+    deviceLostWarning.value = "Thiết bị loopback đã chọn không còn khả dụng, vui lòng chọn lại.";
+  }
+}
+
+function confirmSelection() {
+  deviceLostWarning.value = "";
+  const missing: string[] = [];
+  if (!micDeviceId.value) missing.push("microphone");
+  if (!loopbackDeviceId.value) missing.push("nguồn loopback");
+
+  if (missing.length > 0) {
+    confirmError.value = `Vui lòng chọn ${missing.join(" và ")} trước khi xác nhận.`;
+    return;
+  }
+  confirmError.value = "";
 }
 </script>
 
 <template>
   <main class="container">
-    <h1>Welcome to Tauri + Vue</h1>
+    <h1>Sora RealSub</h1>
+    <p class="subtitle">Chọn thiết bị để bắt đầu phiên phụ đề</p>
 
-    <div class="row">
-      <a href="https://vite.dev" target="_blank">
-        <img src="/vite.svg" class="logo vite" alt="Vite logo" />
-      </a>
-      <a href="https://tauri.app" target="_blank">
-        <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
-      </a>
-      <a href="https://vuejs.org/" target="_blank">
-        <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-      </a>
+    <div class="device-panels">
+      <DeviceSelector
+        title="Chọn microphone"
+        command="list_input_devices_cmd"
+        empty-message="Không tìm thấy thiết bị microphone nào."
+        :selected="micDeviceId"
+        @update:selected="onMicSelected"
+        @devices-loaded="onMicDevicesLoaded"
+      />
+      <DeviceSelector
+        title="Chọn nguồn loopback"
+        command="list_output_devices_cmd"
+        empty-message="Không tìm thấy nguồn loopback nào."
+        :selected="loopbackDeviceId"
+        @update:selected="onLoopbackSelected"
+        @devices-loaded="onLoopbackDevicesLoaded"
+      />
     </div>
-    <p>Click on the Tauri, Vite, and Vue logos to learn more.</p>
 
-    <form class="row" @submit.prevent="greet">
-      <input id="greet-input" v-model="name" placeholder="Enter a name..." />
-      <button type="submit">Greet</button>
-    </form>
-    <p>{{ greetMsg }}</p>
+    <p v-if="deviceLostWarning" class="warning">{{ deviceLostWarning }}</p>
+    <p v-if="confirmError" class="error">{{ confirmError }}</p>
 
-    <DeviceSelector />
+    <button type="button" @click="confirmSelection">Xác nhận</button>
   </main>
 </template>
 
 <style scoped>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
+.device-panels {
+  display: flex;
+  gap: 2em;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #249b73);
+.subtitle {
+  opacity: 0.8;
 }
 
+.warning {
+  color: #b8860b;
+}
+
+.error {
+  color: #d32f2f;
+}
 </style>
 <style>
 :root {
@@ -75,37 +128,10 @@ async function greet() {
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
 h1 {
   text-align: center;
 }
 
-input,
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -117,10 +143,8 @@ button {
   background-color: #ffffff;
   transition: border-color 0.25s;
   box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
   cursor: pointer;
+  outline: none;
 }
 
 button:hover {
@@ -131,26 +155,12 @@ button:active {
   background-color: #e8e8e8;
 }
 
-input,
-button {
-  outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;
     background-color: #2f2f2f;
   }
 
-  a:hover {
-    color: #24c8db;
-  }
-
-  input,
   button {
     color: #ffffff;
     background-color: #0f0f0f98;
@@ -159,5 +169,4 @@ button {
     background-color: #0f0f0f69;
   }
 }
-
 </style>

@@ -63,5 +63,11 @@ không cần sửa vì chỉ gọi qua trait `AudioSource`, không có code riê
 - **Fix**: thêm file capability riêng cho window đó, ví dụ `app/src-tauri/capabilities/subtitle.json` với `windows: ["subtitle"]` + đúng permission cần.
 - **Áp dụng cho tương lai**: mọi window mới tạo (ngoài `main`) muốn dùng bất kỳ Tauri API nào (kéo-thả, resize, invoke command, event...) phải có capability riêng khai báo đúng tên window đó — không giả định nó kế thừa `default.json`. Kiểm tra `app/src-tauri/gen/schemas/acl-manifests.json` để tìm đúng tên permission identifier khi không chắc (ví dụ `core:window:allow-start-dragging`).
 
+## UI chọn thiết bị loopback chưa nối vào capture thật (phát hiện ở PBI 26)
+
+- `LoopbackAudioSource` (cả bản WASAPI Windows và bản PulseAudio/PipeWire Linux, [[PBI-6-capture-loopback-wasapi]]/[[PBI-18-loopback-linux]]) chỉ nhận capture **thiết bị/sink output mặc định** của hệ điều hành — không có tham số chọn thiết bị cụ thể.
+- PBI 26 thêm màn hình chọn "nguồn loopback" ở UI (danh sách thiết bị output qua `list_output_devices_cmd`) nhưng **chỉ dừng ở validate + hiển thị lựa chọn**, chưa truyền lựa chọn đó vào `LoopbackAudioSource`/`start_capture`. Người dùng có thể chọn 1 thiết bị output không phải mặc định trên UI nhưng capture thật vẫn luôn bám theo thiết bị mặc định.
+- **Chưa xử lý**: cần mục roadmap riêng (ngoài phạm vi PBI 26, xem `plan.md` PBI 26 mục Rủi ro) để mở rộng `LoopbackAudioSource` nhận tham số thiết bị, rồi nối lựa chọn UI vào `start_capture`.
+
 ## Liên quan
-[[Tong-quan-du-an]], [[Pipeline-xu-ly-audio]], [[PBI-16-dich-local-sidecar]], [[PBI-9-vad-silero]], [[PBI-6-capture-loopback-wasapi]], [[PBI-17-dich-co-ngu-canh]], [[PBI-20-cua-so-phu-de-noi]], [[PBI-23-keo-tha-cua-so-phu-de]]
+[[Tong-quan-du-an]], [[Pipeline-xu-ly-audio]], [[PBI-16-dich-local-sidecar]], [[PBI-9-vad-silero]], [[PBI-6-capture-loopback-wasapi]], [[PBI-17-dich-co-ngu-canh]], [[PBI-20-cua-so-phu-de-noi]], [[PBI-23-keo-tha-cua-so-phu-de]], [[PBI-26-man-hinh-chinh-chon-thiet-bi]]

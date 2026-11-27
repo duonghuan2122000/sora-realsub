@@ -35,6 +35,7 @@ hound = "3"
 voice_activity_detector = "0.2"
 whisper-rs = "0.16"
 tokio = { version = "1", features = ["macros", "rt"] }
+tauri-plugin-global-shortcut = "2"
 
 [target.'cfg(windows)'.dependencies]
 wasapi = "0.26"

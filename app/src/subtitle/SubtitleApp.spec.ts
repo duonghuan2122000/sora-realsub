@@ -98,3 +98,74 @@ describe('SubtitleApp', () => {
     expect(wrapper.find('.subtitle-overlay').attributes('data-tauri-drag-region')).toBeDefined()
   })
 })
+
+describe('SubtitleApp - chỉnh cỡ chữ (PBI 24)', () => {
+  beforeEach(() => {
+    registeredHandler = undefined
+    localStorage.clear()
+  })
+
+  function fontSizeOf(wrapper: ReturnType<typeof mount>) {
+    return (wrapper.find('.subtitle-overlay').element as HTMLElement).style.getPropertyValue(
+      '--subtitle-font-size',
+    )
+  }
+
+  it('bấm nút tăng cỡ chữ thì font-size tăng, bấm giảm thì giảm', async () => {
+    const wrapper = mount(SubtitleApp)
+    const initial = fontSizeOf(wrapper)
+
+    await wrapper.find('.font-size-btn--increase').trigger('click')
+    const afterIncrease = fontSizeOf(wrapper)
+    expect(parseFloat(afterIncrease)).toBeGreaterThan(parseFloat(initial))
+
+    await wrapper.find('.font-size-btn--decrease').trigger('click')
+    await wrapper.find('.font-size-btn--decrease').trigger('click')
+    const afterDecrease = fontSizeOf(wrapper)
+    expect(parseFloat(afterDecrease)).toBeLessThan(parseFloat(afterIncrease))
+  })
+
+  it('cỡ chữ dừng lại ở mức tối thiểu/tối đa khi bấm liên tục vượt ngưỡng', async () => {
+    const wrapper = mount(SubtitleApp)
+
+    for (let i = 0; i < 50; i++) {
+      await wrapper.find('.font-size-btn--decrease').trigger('click')
+    }
+    const atMin = parseFloat(fontSizeOf(wrapper))
+
+    for (let i = 0; i < 50; i++) {
+      await wrapper.find('.font-size-btn--increase').trigger('click')
+    }
+    const atMax = parseFloat(fontSizeOf(wrapper))
+
+    expect(atMin).toBeGreaterThan(0)
+    expect(atMax).toBeGreaterThan(atMin)
+
+    await wrapper.find('.font-size-btn--increase').trigger('click')
+    expect(parseFloat(fontSizeOf(wrapper))).toBe(atMax)
+  })
+
+  it('khôi phục đúng cỡ chữ đã lưu trong localStorage khi mount lại', () => {
+    localStorage.setItem('subtitle-font-size', '2.25')
+
+    const wrapper = mount(SubtitleApp)
+
+    expect(fontSizeOf(wrapper)).toBe('2.25rem')
+  })
+
+  it('dùng cỡ chữ mặc định khi localStorage chứa giá trị không hợp lệ', () => {
+    localStorage.setItem('subtitle-font-size', 'không-phải-số')
+
+    const wrapper = mount(SubtitleApp)
+
+    expect(parseFloat(fontSizeOf(wrapper))).toBe(1.5)
+  })
+
+  it('tăng cỡ chữ sẽ ghi giá trị mới vào localStorage', async () => {
+    const wrapper = mount(SubtitleApp)
+
+    await wrapper.find('.font-size-btn--increase').trigger('click')
+
+    expect(localStorage.getItem('subtitle-font-size')).toBe(fontSizeOf(wrapper).replace('rem', ''))
+  })
+})

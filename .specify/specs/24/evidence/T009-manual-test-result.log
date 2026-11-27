@@ -1,0 +1,31 @@
+T009 - Kiểm thử tay nút +/- và persistence cỡ chữ phụ đề (PBI 24)
+====================================================================
+
+Môi trường: container Linux, không có máy Windows thật để chạy `bun run tauri dev`
+(giống hạn chế đã ghi nhận ở các PBI trước, xem wiki/pages/Rui-ro-ky-thuat.md).
+Thay thế: chạy `bun run dev` (vite) và mở trực tiếp subtitle.html qua Claude Browser
+pane tại http://localhost:1420/subtitle.html — cùng 1 Vue app/webview, chỉ khác
+IPC Tauri (listen 'subtitle-ready') không có, nên bỏ qua phần hiển thị dòng phụ đề,
+chỉ xác nhận phần UI cỡ chữ + localStorage (đúng phạm vi PBI 24, không đụng PBI 20-23).
+
+Bước 1: Mở http://localhost:1420/subtitle.html lần đầu.
+  --subtitle-font-size ban đầu = "1.5rem" (đúng mặc định FONT_SIZE_DEFAULT)
+  localStorage['subtitle-font-size'] = null (chưa có giá trị lưu trước)
+
+Bước 2: Bấm nút "+" (ref_2, button text "+") 1 lần qua computer tool.
+  --subtitle-font-size sau khi bấm = "1.75rem"
+  localStorage['subtitle-font-size'] = "1.75"
+  => Nút tăng cỡ chữ hoạt động đúng, không bị data-tauri-drag-region="false" chặn click.
+
+Bước 3: Reload lại trang (navigate tới cùng URL, mô phỏng đóng-mở app).
+  --subtitle-font-size sau reload = "1.75rem"
+  => Đúng bằng giá trị đã lưu ở Bước 2, không bị reset về mặc định.
+  => Xác nhận FR-004/FR-005 và SC-002 của spec.md.
+
+Kết luận: PASS. Hành vi tăng cỡ chữ, lưu và khôi phục qua localStorage đúng như
+thiết kế trong plan.md/research.md. Chưa xác nhận bằng máy Windows thật qua
+`bun run tauri dev` (webview WebView2) — nên tick tương tự cách các PBI trước đã
+làm (ví dụ PBI 18 Linux): cần người có máy Windows xác nhận lại hành vi trên
+webview thật trước khi coi đây là xác nhận cuối cùng, dù cơ chế localStorage là
+API chuẩn và hành vi persist qua app data dir là đặc tính mặc định của WebView2/
+WebKitGTK.
