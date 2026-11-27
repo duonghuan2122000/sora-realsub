@@ -21,7 +21,7 @@ mod vad_pipeline;
 
 pub use audio_source::AudioSource;
 pub use capture_session::CaptureSessionState;
-pub use devices::{AudioDeviceInfo, AudioHost, CpalAudioHost, list_input_devices};
+pub use devices::{AudioDeviceInfo, AudioHost, CpalAudioHost, list_input_devices, list_output_devices};
 pub use error::CoreError;
 #[cfg(windows)]
 pub use loopback_audio_source::LoopbackAudioSource;

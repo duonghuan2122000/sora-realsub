@@ -5,9 +5,12 @@ use core::{
     AudioDeviceInfo, CaptureSessionState, CpalAudioHost, LoopbackAudioSource, MicAudioSource,
     MixedAudioSource, ModelErrorKind, RecentTranscriptContext, SidecarTranslator,
     TranscriptPipeline, Translator, VadPipeline, WhisperSpeechToText, list_input_devices,
+    list_output_devices,
 };
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+use std::sync::atomic::{AtomicBool, Ordering};
+use tauri::{AppHandle, Emitter, Manager, State};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 /// Payload sự kiện Tauri `transcript-partial`/`transcript-final` phát ra UI (camelCase, xem
 /// contracts/transcript-events.md PBI 14).
@@ -133,6 +136,11 @@ fn greet(name: &str) -> String {
 #[tauri::command]
 fn list_input_devices_cmd() -> Result<Vec<AudioDeviceInfo>, String> {
     list_input_devices(&CpalAudioHost).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn list_output_devices_cmd() -> Result<Vec<AudioDeviceInfo>, String> {
+    list_output_devices(&CpalAudioHost).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -286,19 +294,61 @@ fn create_subtitle_window(app: &tauri::App) -> tauri::Result<()> {
     Ok(())
 }
 
+/// Trạng thái hiện/ẩn của cửa sổ phụ đề (PBI 25). `true` = đang hiện. Chỉ đọc/ghi từ handler
+/// phím tắt toàn cục, không phơi ra UI — Vue không cần biết (FR-003; research.md quyết định 4).
+struct SubtitleVisibilityState(AtomicBool);
+
+/// Đảo trạng thái hiện/ẩn, tách khỏi `AppHandle`/Tauri runtime để `cargo test` trực tiếp được
+/// (PBI 25, research.md quyết định 4; FR-002).
+fn toggle_subtitle_visibility(is_visible: bool) -> bool {
+    !is_visible
+}
+
+/// Tổ hợp phím tắt toàn cục ẩn/hiện cửa sổ phụ đề (PBI 25). Dùng `hide()`/`show()`, không
+/// đóng/tạo lại cửa sổ, để giữ nguyên vị trí/cỡ chữ đã lưu (FR-004; research.md quyết định 3).
+const TOGGLE_SUBTITLE_SHORTCUT: &str = "Ctrl+Alt+H";
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(|app, _shortcut, event| {
+                    if event.state() != ShortcutState::Pressed {
+                        return;
+                    }
+                    let Some(window) = app.get_webview_window("subtitle") else {
+                        return;
+                    };
+                    let state = app.state::<SubtitleVisibilityState>();
+                    let was_visible = state.0.load(Ordering::SeqCst);
+                    let now_visible = toggle_subtitle_visibility(was_visible);
+                    state.0.store(now_visible, Ordering::SeqCst);
+                    let result = if now_visible {
+                        window.show()
+                    } else {
+                        window.hide()
+                    };
+                    if let Err(err) = result {
+                        eprintln!("lỗi ẩn/hiện cửa sổ phụ đề: {err}");
+                    }
+                })
+                .build(),
+        )
         .manage(CaptureSessionState::new())
+        .manage(SubtitleVisibilityState(AtomicBool::new(true)))
         .invoke_handler(tauri::generate_handler![
             greet,
             list_input_devices_cmd,
+            list_output_devices_cmd,
             start_capture,
             stop_capture
         ])
         .setup(|app| {
             create_subtitle_window(app)?;
+            app.global_shortcut()
+                .register(TOGGLE_SUBTITLE_SHORTCUT)?;
             Ok(())
         })
         .run(tauri::generate_context!())
@@ -312,6 +362,23 @@ mod tests {
     #[test]
     fn greet_returns_greeting_with_name() {
         assert_eq!(greet("Sora"), "Hello, Sora! You've been greeted from Rust!");
+    }
+
+    // PBI 25 — T007: đảo đúng true<->false, và đảo liên tục nhiều lần cho kết quả đúng chu kỳ 2
+    // (trường hợp biên "nhấn phím tắt liên tục nhiều lần nhanh" trong spec.md).
+    #[test]
+    fn toggle_subtitle_visibility_dao_dung_trang_thai() {
+        assert_eq!(toggle_subtitle_visibility(true), false);
+        assert_eq!(toggle_subtitle_visibility(false), true);
+    }
+
+    #[test]
+    fn toggle_subtitle_visibility_nhan_lien_tuc_dung_chu_ky() {
+        let mut visible = true;
+        for i in 0..10 {
+            visible = toggle_subtitle_visibility(visible);
+            assert_eq!(visible, i % 2 == 1);
+        }
     }
 
     // PBI 19 — T009/T010: Translator giả ghi lại (text, context) mỗi lần được gọi, trả

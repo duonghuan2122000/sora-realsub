@@ -54,11 +54,11 @@ cài đặt loopback riêng:
 - [x] Auto-scroll/fade dòng cũ khi có dòng mới, test với nhiều dòng liên tiếp (PBI 22: `SubtitleApp.vue` giữ N=3 dòng gần nhất qua `lines: Ref<SubtitleLine[]>`, cuộn + mờ dần CSS `opacity` theo class `--age-0/1/2`, không thêm dependency, 5/5 test pass — xem `wiki/pages/PBI-22-auto-scroll-fade-phu-de.md`)
 - [x] Cho phép kéo-thả di chuyển vị trí cửa sổ, test vị trí được giữ sau khi thả (PBI 23: `data-tauri-drag-region` + capability `core:window:allow-start-dragging` riêng cho window `subtitle`, xác nhận PASS trên Windows thật)
 - [x] Cho phép resize / chỉnh cỡ chữ, test lưu lại cỡ chữ sau khi đóng-mở app (PBI 24: chỉnh cỡ chữ qua nút +/-, lưu/khôi phục qua `localStorage` webview; resize khung cửa sổ bằng kéo viền để ngoài phạm vi — cửa sổ không có border/title bar nên không áp dụng kiểu kéo-viền thông thường, xem `.specify/specs/24/spec.md`)
-- [ ] Nút/phím tắt ẩn-hiện cửa sổ phụ đề, test toggle hoạt động đúng
+- [x] Nút/phím tắt ẩn-hiện cửa sổ phụ đề, test toggle hoạt động đúng (PBI 25: phím tắt toàn cục `Ctrl+Alt+H` qua `tauri-plugin-global-shortcut`, `hide()`/`show()` giữ vị trí/cỡ chữ; 67/67 test pass, xác nhận PASS trên Windows thật)
 
 ## M6 — Điều khiển & cấu hình (Control UI)
 
-- [ ] Màn hình chính: chọn thiết bị mic + nguồn loopback, test chọn sai thiết bị báo lỗi rõ ràng
+- [x] Màn hình chính: chọn thiết bị mic + nguồn loopback, test chọn sai thiết bị báo lỗi rõ ràng (PBI 26: màn hình chính mới ở `App.vue` thay skeleton mặc định; "loopback" = danh sách thiết bị output qua `list_output_devices_cmd` mới, tái dùng pattern `AudioHost`; validate đủ 2 lựa chọn + xoá lựa chọn khi thiết bị mất khả dụng, báo lỗi rõ ràng; 70/70 test Rust + 22/22 test Vitest pass; **chưa xác nhận tay trên máy thật có mic/loopback thật**, chỉ xác nhận layout+đường lỗi qua `vite dev` trong browser pane — xem `wiki/pages/PBI-26-man-hinh-chinh-chon-thiet-bi.md`)
 - [ ] Nút Start/Stop phiên dịch phụ đề, test trạng thái UI đồng bộ với Core (đang chạy/đã dừng)
 - [ ] Chọn cặp ngôn ngữ nguồn-đích từ UI, test đổi ngôn ngữ áp dụng ngay cho phiên mới
 - [ ] Lưu cấu hình (thiết bị, ngôn ngữ, vị trí cửa sổ) vào file config, test khởi động lại app giữ cấu hình cũ
